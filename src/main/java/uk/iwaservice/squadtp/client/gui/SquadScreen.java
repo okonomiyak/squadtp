@@ -28,12 +28,14 @@ import java.util.UUID;
 public class SquadScreen extends Screen {
 
     private static final int HEADER_H = 24;
+    private static final int TAB_BAR_H = 22;
     private static final int PAD = 12;
     private static final int ROW_H = 26;
     private static final int MAX_LIST_ROWS = 5;
 
-    private static final int COLOR_PANEL_BG = 0xF4141420;
+    private static final int COLOR_PANEL_BG = 0xF4222222;
     private static final int COLOR_HEADER_BG = 0xFF1F2333;
+    private static final int COLOR_TAB_BAR_BG = 0xFF191C29;
     private static final int COLOR_ACCENT = 0xFF4A5A8A;
     private static final int COLOR_OUTLINE = 0xFF454A66;
     private static final int COLOR_TEXT = 0xFFFFFF;
@@ -42,6 +44,19 @@ public class SquadScreen extends Screen {
     private static final int COLOR_SEPARATOR = 0x28FFFFFF;
     private static final int COLOR_ONLINE = 0xFF55FF55;
     private static final int COLOR_OFFLINE = 0xFF666B80;
+
+    private enum Tab {
+        MAIN("squadtp.gui.tab_main"),
+        LOCATIONS("squadtp.gui.tab_locations"),
+        RECRUIT("squadtp.gui.tab_recruit"),
+        SETTINGS("squadtp.gui.tab_settings");
+
+        final String key;
+
+        Tab(String key) {
+            this.key = key;
+        }
+    }
 
     private record TextLine(int x, int y, Component text, int color, boolean centered) {}
     private record Rect(int x, int y, int w, int h, int color) {}
@@ -52,6 +67,7 @@ public class SquadScreen extends Screen {
     private final List<Rect> rects = new ArrayList<>();
     private final List<Face> faces = new ArrayList<>();
     private final List<Placement> pending = new ArrayList<>();
+    private final List<Tab> tabs = new ArrayList<>();
 
     private int panelWidth = 360;
     private int panelLeft;
@@ -60,6 +76,14 @@ public class SquadScreen extends Screen {
     private int cursor;
     private int dataRevision = -1;
     private Component headerRight = Component.empty();
+    private Tab selectedTab = Tab.MAIN;
+
+    /** Natural (unclamped) height of the current tab's content; panelHeight is this capped to the screen. */
+    private int contentHeight;
+    private int scrollOffset;
+    private int maxScroll;
+    private int viewportTop;
+    private int viewportBottom;
 
     public SquadScreen() {
         super(Component.translatable("squadtp.gui.title"));
@@ -78,28 +102,68 @@ public class SquadScreen extends Screen {
         }
     }
 
+    private void selectTab(Tab tab) {
+        if (tab != selectedTab) {
+            selectedTab = tab;
+            scrollOffset = 0;
+            rebuild();
+        }
+    }
+
     // --- layout helpers (phase A records placements, phase B assigns absolute y) ---
+    // Placements are replayed on every scroll (see reflow()), so each one skips
+    // itself when scrolled fully outside the viewport - this both avoids drawing
+    // off-panel content and, for buttons, keeps scrolled-out widgets unclickable
+    // (GuiGraphics scissor only clips rendering, not widget hit-testing).
+
+    private boolean isVisible(int y, int height) {
+        return y + height > viewportTop && y < viewportBottom;
+    }
 
     private void text(int relX, int relY, Component t, int color) {
-        pending.add(top -> textLines.add(new TextLine(panelLeft + relX, top + relY, t, color, false)));
+        pending.add(top -> {
+            int y = top + relY;
+            if (isVisible(y, 8)) {
+                textLines.add(new TextLine(panelLeft + relX, y, t, color, false));
+            }
+        });
     }
 
     private void centeredText(int relY, Component t, int color) {
-        pending.add(top -> textLines.add(new TextLine(panelLeft + panelWidth / 2, top + relY, t, color, true)));
+        pending.add(top -> {
+            int y = top + relY;
+            if (isVisible(y, 8)) {
+                textLines.add(new TextLine(panelLeft + panelWidth / 2, y, t, color, true));
+            }
+        });
     }
 
     private void rect(int relX, int relY, int w, int h, int color) {
-        pending.add(top -> rects.add(new Rect(panelLeft + relX, top + relY, w, h, color)));
+        pending.add(top -> {
+            int y = top + relY;
+            if (isVisible(y, h)) {
+                rects.add(new Rect(panelLeft + relX, y, w, h, color));
+            }
+        });
     }
 
     private void face(int relX, int relY, UUID uuid) {
-        pending.add(top -> faces.add(new Face(panelLeft + relX, top + relY, uuid)));
+        pending.add(top -> {
+            int y = top + relY;
+            if (isVisible(y, 12)) {
+                faces.add(new Face(panelLeft + relX, y, uuid));
+            }
+        });
     }
 
     private void button(int relX, int relY, int w, Component label, @Nullable Component tooltip, Runnable action) {
         pending.add(top -> {
+            int y = top + relY;
+            if (!isVisible(y, 20)) {
+                return;
+            }
             Button b = Button.builder(label, btn -> action.run())
-                    .bounds(panelLeft + relX, top + relY, w, 20).build();
+                    .bounds(panelLeft + relX, y, w, 20).build();
             if (tooltip != null) {
                 b.setTooltip(Tooltip.create(tooltip));
             }
@@ -117,10 +181,6 @@ public class SquadScreen extends Screen {
     // --- content ---
 
     private void rebuild() {
-        clearWidgets();
-        textLines.clear();
-        rects.clear();
-        faces.clear();
         pending.clear();
         dataRevision = SquadClientData.getRevision();
         headerRight = Component.empty();
@@ -129,28 +189,94 @@ public class SquadScreen extends Screen {
             return;
         }
         panelWidth = Math.min(360, this.width - 16);
-        cursor = HEADER_H + 8;
 
-        if (SquadClientData.isInSquad()) {
-            buildSquadView();
-        } else {
-            buildNoSquadView();
+        boolean inSquad = SquadClientData.isInSquad();
+        tabs.clear();
+        tabs.add(Tab.MAIN);
+        if (inSquad) {
+            tabs.add(Tab.LOCATIONS);
+        }
+        tabs.add(Tab.RECRUIT);
+        tabs.add(Tab.SETTINGS);
+        if (!tabs.contains(selectedTab)) {
+            selectedTab = Tab.MAIN;
         }
 
-        buildSettingsSection();
+        cursor = HEADER_H + TAB_BAR_H + 8;
+        switch (selectedTab) {
+            case MAIN -> {
+                if (inSquad) {
+                    buildMembersTab();
+                } else {
+                    buildNoSquadMainTab();
+                }
+            }
+            case LOCATIONS -> buildLocationsTab();
+            case RECRUIT -> buildRecruitTab(inSquad);
+            case SETTINGS -> buildSettingsTab();
+        }
+
+        if (inSquad) {
+            headerRight = Component.translatable("squadtp.gui.members", SquadClientData.getMembers().size());
+        }
 
         cursor += PAD - 4;
-        panelHeight = cursor;
+        contentHeight = cursor;
+        panelHeight = Math.min(contentHeight, Math.max(100, this.height - 24));
+        maxScroll = Math.max(0, contentHeight - panelHeight);
+        scrollOffset = Math.max(0, Math.min(scrollOffset, maxScroll));
+
         panelLeft = (this.width - panelWidth) / 2;
         panelTop = Math.max(12, (this.height - panelHeight) / 2 - 8);
+        viewportTop = panelTop + HEADER_H + TAB_BAR_H + 1;
+        viewportBottom = panelTop + panelHeight;
 
+        reflow();
+    }
+
+    /** Re-runs the recorded placements at the current scroll position, without recomputing content. */
+    private void reflow() {
+        clearWidgets();
+        textLines.clear();
+        rects.clear();
+        faces.clear();
+        addTabBarWidgets();
+        int top = panelTop - scrollOffset;
         for (Placement p : pending) {
-            p.place(panelTop);
+            p.place(top);
         }
     }
 
-    /** Client-only preferences; shown regardless of squad membership. */
-    private void buildSettingsSection() {
+    /** Tab buttons are fixed chrome (like the header): rebuilt every reflow, never affected by scrollOffset. */
+    private void addTabBarWidgets() {
+        if (tabs.isEmpty()) {
+            return;
+        }
+        int barY = panelTop + HEADER_H + 1;
+        int tabWidth = panelWidth / tabs.size();
+        int x = panelLeft;
+        for (Tab tab : tabs) {
+            Tab captured = tab;
+            Button b = Button.builder(Component.translatable(tab.key), btn -> selectTab(captured))
+                    .bounds(x, barY, tabWidth, TAB_BAR_H - 1).build();
+            b.active = tab != selectedTab;
+            addRenderableWidget(b);
+            x += tabWidth;
+        }
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        if (maxScroll > 0) {
+            scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset - (int) (delta * ROW_H)));
+            reflow();
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, delta);
+    }
+
+    /** Client-only preferences tab. */
+    private void buildSettingsTab() {
         section("squadtp.gui.section_settings");
         boolean bellOn = uk.iwaservice.squadtp.client.ClientConfig.BELL_SOUND_ENABLED.get();
         text(PAD, cursor + 6, Component.translatable("squadtp.gui.bell_sound"), COLOR_TEXT);
@@ -165,7 +291,8 @@ public class SquadScreen extends Screen {
         cursor += ROW_H;
     }
 
-    private void buildNoSquadView() {
+    /** Main tab when not in a squad: status hint, invite response, create button. */
+    private void buildNoSquadMainTab() {
         centeredText(cursor + 2, Component.translatable("squadtp.gui.no_squad_hint"), COLOR_TEXT_DIM);
         cursor += 16;
 
@@ -185,8 +312,6 @@ public class SquadScreen extends Screen {
         button(PAD, cursor, panelWidth - 2 * PAD, Component.translatable("squadtp.gui.create"), null,
                 () -> command("squad create"));
         cursor += 24;
-
-        buildJoinRequestList(false);
     }
 
     /**
@@ -227,12 +352,12 @@ public class SquadScreen extends Screen {
         }
     }
 
-    private void buildSquadView() {
+    /** Members tab: the member list plus leave/disband. */
+    private void buildMembersTab() {
         UUID self = minecraft.player.getUUID();
         boolean isLeader = self.equals(SquadClientData.getLeader());
         Map<UUID, String> members = SquadClientData.getMembers();
         Map<UUID, SquadClientData.MemberPos> positions = SquadClientData.getPositions();
-        headerRight = Component.translatable("squadtp.gui.members", members.size());
 
         section("squadtp.gui.section_members");
         int slot = 0;
@@ -277,6 +402,20 @@ public class SquadScreen extends Screen {
             cursor += ROW_H;
         }
 
+        cursor += 4;
+        button(PAD, cursor, 76, Component.translatable("squadtp.gui.leave"), null,
+                () -> command("squad leave"));
+        if (isLeader) {
+            button(PAD + 80, cursor, 76, Component.translatable("squadtp.gui.disband"),
+                    Component.translatable("squadtp.gui.tooltip.disband"), () -> command("squad disband"));
+        }
+        cursor += 24;
+    }
+
+    /** Locations tab: rally point and respawn beacon (only reachable while in a squad). */
+    private void buildLocationsTab() {
+        boolean isLeader = minecraft.player.getUUID().equals(SquadClientData.getLeader());
+
         section("squadtp.gui.section_rally");
         ResourceLocation rallyDim = SquadClientData.getRallyDimension();
         BlockPos rallyPos = SquadClientData.getRallyPos();
@@ -317,6 +456,12 @@ public class SquadScreen extends Screen {
             text(PAD, cursor + 6, Component.translatable("squadtp.gui.beacon_none"), COLOR_TEXT_FAINT);
         }
         cursor += ROW_H;
+    }
+
+    /** Recruit tab: incoming join requests + invitable players (leader), and the "join another squad" list. */
+    private void buildRecruitTab(boolean inSquad) {
+        UUID self = minecraft.player.getUUID();
+        boolean isLeader = inSquad && self.equals(SquadClientData.getLeader());
 
         if (isLeader) {
             List<String> requests = SquadClientData.getJoinRequests();
@@ -361,16 +506,7 @@ public class SquadScreen extends Screen {
             }
         }
 
-        buildJoinRequestList(true);
-
-        cursor += 4;
-        button(PAD, cursor, 76, Component.translatable("squadtp.gui.leave"), null,
-                () -> command("squad leave"));
-        if (isLeader) {
-            button(PAD + 80, cursor, 76, Component.translatable("squadtp.gui.disband"),
-                    Component.translatable("squadtp.gui.tooltip.disband"), () -> command("squad disband"));
-        }
-        cursor += 24;
+        buildJoinRequestList(inSquad);
     }
 
     // --- data helpers ---
@@ -437,13 +573,15 @@ public class SquadScreen extends Screen {
         graphics.fill(l - 1, t - 1, r + 1, b + 1, 0x90000000);
         graphics.fill(l, t, r, b, COLOR_PANEL_BG);
         graphics.fill(l, t, r, t + HEADER_H, COLOR_HEADER_BG);
-        graphics.fill(l, t + HEADER_H, r, t + HEADER_H + 1, COLOR_ACCENT);
+        graphics.fill(l, t + HEADER_H, r, t + HEADER_H + TAB_BAR_H + 1, COLOR_TAB_BAR_BG);
+        graphics.fill(l, t + HEADER_H + TAB_BAR_H + 1, r, t + HEADER_H + TAB_BAR_H + 2, COLOR_ACCENT);
         graphics.renderOutline(l - 1, t - 1, panelWidth + 2, panelHeight + 2, COLOR_OUTLINE);
 
         graphics.drawString(this.font, this.title, l + PAD, t + 8, COLOR_TEXT);
         int rightWidth = this.font.width(headerRight);
         graphics.drawString(this.font, headerRight, r - PAD - rightWidth, t + 8, COLOR_TEXT_DIM);
 
+        graphics.enableScissor(l, viewportTop, r, viewportBottom);
         for (Rect rect : rects) {
             graphics.fill(rect.x(), rect.y(), rect.x() + rect.w(), rect.y() + rect.h(), rect.color());
         }
@@ -458,6 +596,17 @@ public class SquadScreen extends Screen {
             }
         }
         super.render(graphics, mouseX, mouseY, partialTick);
+        graphics.disableScissor();
+
+        if (maxScroll > 0) {
+            int trackX = r - 5;
+            int trackTop = viewportTop + 1;
+            int trackHeight = Math.max(1, viewportBottom - viewportTop - 2);
+            graphics.fill(trackX, trackTop, trackX + 2, trackTop + trackHeight, 0x40FFFFFF);
+            int thumbHeight = Math.max(12, trackHeight * panelHeight / contentHeight);
+            int thumbY = trackTop + (trackHeight - thumbHeight) * scrollOffset / Math.max(1, maxScroll);
+            graphics.fill(trackX, thumbY, trackX + 2, thumbY + thumbHeight, 0xB0FFFFFF);
+        }
     }
 
     @Override

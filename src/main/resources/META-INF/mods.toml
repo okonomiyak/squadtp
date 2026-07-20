@@ -4,7 +4,7 @@ license="GPL-3.0-only"
 
 [[mods]]
 modId="squadtp"
-version="0.1.3"
+version="0.1.4"
 displayName="Squad Teleport"
 description='''Squad (party) system with member teleport and optional JourneyMap integration.'''
 

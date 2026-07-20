@@ -53,11 +53,14 @@ The revive cast time (default 5 seconds, `reviveCastSeconds`) can be **changed a
 
 ## GUI
 
-Press **K** (rebindable under the "Squad Teleport" key category) to open the squad screen.
+Press **K** (rebindable under the "Squad Teleport" key category) to open the squad screen. If content doesn't fit, scroll with the mouse wheel (a scrollbar appears on the right edge).
 
-- **Not in a squad**: a Create Squad button, any pending invite ("X invited you" + Accept/Decline), and a "Request to Join" button for each online player
-- **In a squad**: member list (leader ★, coordinates, online status, auto-refreshing every second), a [TP] button per member, [Kick]/[Promote] for the leader, the rally point display / [Go] / [Set Here], and [Leave]/[Disband]
-- The leader additionally sees a "Join Requests" list ([Approve]/[Reject]) and an "Invitable Players" list (from the online tab list) with an [Invite] button
+The screen is split into 4 tabs (the "Locations" tab is hidden while not in a squad):
+
+- **Squad**: while not in a squad, a Create Squad button and any pending invite ("X invited you" + Accept/Decline). While in one, the member list (leader ★, coordinates, online status, auto-refreshing every second), a [TP] button per member, [Kick]/[Promote] for the leader, and [Leave]/[Disband]
+- **Locations** (in a squad only): the rally point display / [Go] / [Set Here], and the respawn beacon display / [Go] / remaining uses
+- **Recruit**: the leader sees a "Join Requests" list ([Approve]/[Reject]) and an "Invitable Players" list (from the online tab list) with an [Invite] button. Anyone can request to join another online player's squad from the "Request to Join" section
+- **Settings**: the approach-alert bell sound ON/OFF toggle
 
 **There are two ways to join a squad**: ① the leader invites you and you accept, ② you request to join and the leader approves. Both are available from the GUI and from clickable chat buttons.
 
