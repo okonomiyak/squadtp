@@ -1,12 +1,14 @@
+*[日本語 README](README.ja.md)*
+
 # Squad Teleport (squadtp)
 
-Minecraft 1.20.1 / Forge 47.x 向けの分隊(パーティー)Mod。
-最大4人(設定可変)の分隊を作り、メンバーの現在地や集合地点へテレポートできる。
-JourneyMap (5.9.x〜5.10.x) が入っていればメンバー位置と集合地点がウェイポイント表示される(**JourneyMapなしでも本体機能はすべて動作**)。
+A squad (party) mod for Minecraft 1.20.1 / Forge 47.x.
+Create a squad of up to 4 players (size configurable) and teleport to a member's current location or a shared rally point.
+If JourneyMap (5.9.x–5.10.x) is installed, member locations and the rally point are shown as waypoints on the map (**all core features work fully without JourneyMap**).
 
-## ライセンス
+## License
 
-GNU General Public License v3.0 (GPL-3.0-only)。全文は [`LICENSE`](LICENSE) を参照。
+GNU General Public License v3.0 (GPL-3.0-only). See [`LICENSE`](LICENSE) for the full text.
 
     squadtp — a squad (party) teleport mod for Minecraft
     Copyright (C) 2026 squadtp contributors
@@ -16,130 +18,130 @@ GNU General Public License v3.0 (GPL-3.0-only)。全文は [`LICENSE`](LICENSE) 
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-## コマンド
+## Commands
 
-| コマンド | 説明 | 権限 |
+| Command | Description | Permission |
 |---|---|---|
-| `/squad create` | 分隊を作成(作成者がリーダー) | - |
-| `/squad invite <player>` | 招待(チャットの[参加する]/[拒否する]で応答可) | リーダー |
-| `/squad accept` / `/squad deny` | 招待に応答 | 被招待者 |
-| `/squad join <player>` | その人の分隊に参加申請 | 未所属者 |
-| `/squad approve <name>` / `/squad reject <name>` | 参加申請に応答 | リーダー |
-| `/squad leave` | 脱退(リーダー脱退時は最古参メンバーへ自動委譲) | - |
-| `/squad kick <member>` | キック(オフラインメンバーも名前指定可) | リーダー |
-| `/squad promote <member>` | リーダー委譲 | リーダー |
-| `/squad disband` | 解散 | リーダー |
-| `/squad info` | メンバー・オンライン状態・集合地点を表示 | - |
-| `/squad tp <member>` | メンバーの現在地へテレポート | - |
-| `/squad setrally` | 現在地を集合地点に設定 | リーダー |
-| `/squad rally` | 集合地点へテレポート | - |
-| `/squad admin` | 機能スイッチ・蘇生詠唱時間の現在値を表示 | OP (レベル2+) |
-| `/squad admin enable\|disable <機能>` | 機能をサーバー全体でON/OFF | OP (レベル2+) |
-| `/squad admin revivetime <秒数>` | 蘇生の詠唱時間を実行時に変更(再起動不要、ワールドに永続化) | OP (レベル2+) |
-| `/squad admin revivetime reset` | 詠唱時間をconfigの既定値に戻す | OP (レベル2+) |
+| `/squad create` | Create a squad (the creator becomes leader) | - |
+| `/squad invite <player>` | Invite a player (they can respond via the [Join]/[Decline] chat buttons) | Leader |
+| `/squad accept` / `/squad deny` | Respond to an invite | Invitee |
+| `/squad join <player>` | Request to join that player's squad | Not in a squad |
+| `/squad approve <name>` / `/squad reject <name>` | Respond to a join request | Leader |
+| `/squad leave` | Leave (leadership auto-transfers to the longest-standing member if the leader leaves) | - |
+| `/squad kick <member>` | Kick (offline members can be targeted by name) | Leader |
+| `/squad promote <member>` | Transfer leadership | Leader |
+| `/squad disband` | Disband the squad | Leader |
+| `/squad info` | Show members, online status, and the rally point | - |
+| `/squad tp <member>` | Teleport to a member's current location | - |
+| `/squad setrally` | Set the rally point to your current location | Leader |
+| `/squad rally` | Teleport to the rally point | - |
+| `/squad admin` | Show current feature switches and the revive cast time | OP (level 2+) |
+| `/squad admin enable\|disable <feature>` | Toggle a feature server-wide | OP (level 2+) |
+| `/squad admin revivetime <seconds>` | Change the revive cast time at runtime (no restart needed, persisted to the world) | OP (level 2+) |
+| `/squad admin revivetime reset` | Reset the cast time back to the config default | OP (level 2+) |
 
-### 管理者用の機能スイッチ
+### Admin feature switches
 
-`/squad admin disable <機能>` でサーバー全体・実行時に個別機能を無効化できる(ワールドデータに永続化、再起動後も維持)。
-対象: `create`(分隊作成) / `invite`(招待) / `join`(参加申請) / `tp`(メンバーTP) / `rally`(集合地点) / `respawn`(リスポーン選択) / `positions`(位置共有=マップ表示) / `dummy`(テストダミー)。
-検証はすべてサーバー側の実行箇所で行うため、GUI・チャットボタン経由でも迂回できない。`positions` を無効にするとクライアントの位置表示も即クリアされる。
+`/squad admin disable <feature>` lets you turn individual features off server-wide at runtime (persisted to world data, survives restarts).
+Available features: `create` (squad creation) / `invite` (invites) / `join` (join requests) / `tp` (member teleport) / `rally` (rally point) / `respawn` (respawn chooser) / `positions` (position sharing / map display) / `dummy` (test dummy block).
+All checks happen on the server at the point of execution, so there is no way to bypass them via the GUI or chat buttons. Disabling `positions` immediately clears client-side position displays too.
 
-蘇生の詠唱時間(既定5秒、`reviveCastSeconds`)は `/squad admin revivetime <1〜60>` で**サーバー再起動なしに実行時変更**でき、ワールドデータに永続化される(`/squad admin revivetime reset` でconfigの既定値に戻す)。
+The revive cast time (default 5 seconds, `reviveCastSeconds`) can be **changed at runtime without a server restart** via `/squad admin revivetime <1-60>`, and the value is persisted to world data (`/squad admin revivetime reset` restores the config default).
 
 ## GUI
 
-**Kキー**(キー設定「Squad Teleport」カテゴリで変更可)で分隊画面を開ける。
+Press **K** (rebindable under the "Squad Teleport" key category) to open the squad screen.
 
-- 未所属時: 分隊作成ボタン、届いている招待の表示(「〇〇から招待が届いています」+承認/拒否)、オンラインプレイヤーへの「参加申請」ボタン
-- 所属時: メンバー一覧(リーダー★・座標・オンライン状態、1秒ごとに自動更新)、各メンバーへの [TP]、リーダーなら [キック]/[委譲]、集合地点の表示/[移動]/[ここに設定]、[脱退]/[解散]
-- リーダーには「参加申請」一覧([承認]/[拒否])と「招待できるプレイヤー」一覧(タブリスト上のオンラインプレイヤー)+ [招待] ボタン
+- **Not in a squad**: a Create Squad button, any pending invite ("X invited you" + Accept/Decline), and a "Request to Join" button for each online player
+- **In a squad**: member list (leader ★, coordinates, online status, auto-refreshing every second), a [TP] button per member, [Kick]/[Promote] for the leader, the rally point display / [Go] / [Set Here], and [Leave]/[Disband]
+- The leader additionally sees a "Join Requests" list ([Approve]/[Reject]) and an "Invitable Players" list (from the online tab list) with an [Invite] button
 
-**加入の導線は2通り**: ①リーダーが招待→相手が承認、②参加申請→リーダーが承認。どちらもGUIとチャットボタンの両方から操作できる。
+**There are two ways to join a squad**: ① the leader invites you and you accept, ② you request to join and the leader approves. Both are available from the GUI and from clickable chat buttons.
 
-**分隊の切り替え(乗り換え)**: 招待・参加申請とも**既に別の分隊に所属していても行える**。承諾/承認された瞬間に旧分隊を自動離脱してから新分隊に加入する(検証(満員・チーム制限など)は切り替え前にすべて通過させてから実行するため、失敗時に無所属になることはない)。旧分隊にも「〇〇が脱退しました」「新リーダーは〇〇です」を通知。GUIの「分隊に参加申請する」欄は所属中でも常時表示される(自分の分隊のメンバーは除外)。
+**Switching squads**: both invites and join requests work **even if you are already in a different squad**. The moment you accept/get approved, you automatically leave your old squad before joining the new one (all validation - squad-full checks, team restrictions, etc. - runs *before* the switch, so a failed join never leaves you squadless). Your old squad is notified ("X left the squad" / "X is now the leader"). The GUI's "Request to Join" section stays visible even while you're in a squad (your own squad's members are excluded from the list).
 
-GUIの全操作は対応する `/squad` コマンドをクライアントから送信するだけなので、権限チェックは従来どおりサーバー側で完結する(GUI追加による新たな攻撃面はない)。
+Every GUI action simply sends the corresponding `/squad` command from the client, so permission checks remain entirely server-side as before (the GUI adds no new attack surface).
 
-## テストダミーブロック
+## Test Dummy Block
 
-1人で分隊機能をテストするための「プレイヤー代わり」ブロック(クリエイティブタブ「機能的ブロック」内、テクスチャはカボチャ)。
+A "stand-in for a player" block for testing squad features solo (in the "Functional Blocks" creative tab, pumpkin-textured).
 
-- 設置すると固有の名前(例: `Dummy_a1b2`)を持つ
-- **分隊リーダーが右クリック**すると自分の分隊に参加/離脱をトグル
-- 参加中はオンラインメンバーとして扱われ、位置同期・JourneyMapウェイポイント・`/squad tp Dummy_xxxx`・GUIのTPボタンの動作を1人で確認できる
-- ブロックを壊すと分隊から自動離脱。チャンクがアンロードされている間は「オフライン」扱い
-- ダミーはリーダーになれない(`/squad promote` は拒否され、自動委譲の対象からも除外。リーダー脱退でダミーだけが残る場合は分隊解散)
+- Gets a unique name when placed (e.g. `Dummy_a1b2`)
+- **The squad leader right-clicks it** to toggle its membership in their squad
+- While a member, it's treated like an online player: you can verify position sync, JourneyMap waypoints, `/squad tp Dummy_xxxx`, and the GUI's TP button entirely solo
+- Breaking the block automatically removes it from the squad; while its chunk is unloaded it counts as "offline"
+- A dummy can never be leader (`/squad promote` is rejected and it's excluded from automatic leadership succession; if only dummies remain after the leader leaves, the squad disbands)
 
-## 蘇生(ダウン)システム
+## Revive (Downed) System
 
-分隊メンバーが致死ダメージを受けると、死亡せず**ダウン状態**になる(体力1固定・大幅な移動速度低下・画面に「ダウン」表示)。
+When a squad member takes lethal damage, instead of dying they enter a **downed state** (health pinned at 1, heavily slowed, "DOWNED" shown on screen).
 
-- タイムアウト(既定30秒)以内に蘇生されなければ通常の死亡処理へ。**Gキー**(変更可)または `/squad giveup` で待たずに諦めて即死亡できる
-- ダウン中は**伏せポーズ(泳ぎ姿勢)+発光アウトライン**になり、周囲・壁越しからも一目でダウンと分かる。**できるのは匍匐移動・チャット・ギブアップのみ**(ジャンプ/攻撃/採掘/アイテム・ブロック使用/ドロップ/持ち替え/インベントリ等の画面/全テレポート不可)
-- **TACZ(銃Mod)連携**(オプション、ソフト依存): TACZ導入時、ダウン中は銃を撃てない(`GunFireEvent`/`GunShootEvent`をキャンセル)。TACZ非導入でも本体機能に影響なし
-- **SuperbWarfare(銃Mod)連携**(オプション、ソフト依存): ダウン中は弾丸(バニラ`Projectile`型・`superbwarfare`名前空間)の生成そのものをキャンセルし、実質的に発射を無効化。SuperbWarfareにはTACZのような「発射前にキャンセルできるイベント」が存在しないための代替実装(銃の動作・音・弾薬消費は起きるが、弾は発生せずダメージも出ない)。SuperbWarfare側のクラスへの直接依存はゼロ(バニラの標準クラスと名前空間の文字列判定のみ)
-- **接近アラート**: ダウン中に分隊メンバーが `approachAlertRadius`(既定24ブロック)以内に入ると、アクションバーに「〇〇 が接近中 (Nm)」+通知音(1回のみ、離れて再接近すれば再通知)。ベル音は分隊GUI下部の「設定」欄でプレイヤーごとにON/OFF可能(メッセージ表示自体は常時)
-- 分隊メンバーがダウン中のプレイヤーを**右クリック長押し**(既定5秒)で蘇生。画面中央に進行ゲージ表示。**4ブロック以上離れる/離すと詠唱中断**
-- 蘇生完了で最大体力の一部(既定30%)回復+短時間無敵(既定3秒)
-- **ソロ(分隊未所属)はダウンを経由せず即死亡**。/kill・奈落などの即死系ダメージはダウンを貫通
-- ダウン中はテレポート不可。ダウン中のログアウトは即死亡扱い(戦闘ログ対策)
-- `/squad admin disable revive` でサーバー全体で無効化可能
+- If not revived within the timeout (default 30s), they proceed to a real death. **Hold G** (rebindable) or run `/squad giveup` to give up immediately instead of waiting
+- While downed you get a **prone pose (swimming animation) + a glowing outline**, so squadmates can spot you at a glance, even through walls. **The only things you can do are crawl, chat, and give up** (jumping / attacking / mining / using items or blocks / dropping items / swapping hands / opening inventory-like screens / any teleport are all blocked)
+- **TACZ (gun mod) integration** (optional, soft dependency): if TACZ is installed, guns cannot be fired while downed (`GunFireEvent`/`GunShootEvent` are canceled). No effect at all if TACZ isn't installed
+- **SuperbWarfare (gun mod) integration** (optional, soft dependency): while downed, the projectile itself (vanilla `Projectile` type, `superbwarfare` namespace) is prevented from ever spawning, effectively disabling firing. This is a workaround for the fact that SuperbWarfare, unlike TACZ, has no cancelable "about to fire" event (the gun still animates, plays its sound, and consumes ammo, but no bullet appears and no damage is dealt). Has zero direct dependency on any SuperbWarfare class - only the vanilla base type and a namespace string check
+- **Approach alert**: while downed, when a squad member comes within `approachAlertRadius` (default 24 blocks), an action-bar message ("X is approaching (Nm)") plus a sound plays once (won't repeat until they leave and come back). The bell sound can be toggled per-player from the "Settings" section at the bottom of the squad GUI (the message itself always shows)
+- A squad member can **hold right-click** (default 5s) on a downed player to revive them. A progress gauge shows on screen. **Moving more than 4 blocks away, or releasing the click, cancels the channel**
+- On a successful revive: a portion of max health is restored (default 30%) plus brief invulnerability (default 3s)
+- **Solo players (not in a squad) skip the downed state entirely and die immediately**. Instant-death sources (`/kill`, the void, etc.) bypass the downed state too
+- Teleporting is disabled while downed. Logging out while downed counts as an immediate death (anti combat-logging)
+- Can be disabled server-wide with `/squad admin disable revive`
 
-設定 (`revive` セクション): `downedTimeoutSeconds`(30) / `reviveCastSeconds`(5、`/squad admin revivetime`で実行時上書き可) / `reviveHealPercent`(30) / `reviveInvulnSeconds`(3) / `allowNonSquadRevive`(false=分隊メンバーのみ蘇生可) / `approachAlertEnabled`(true、サーバーconfig) / `approachAlertRadius`(24、サーバーconfig)
+Config (`revive` section): `downedTimeoutSeconds` (30) / `reviveCastSeconds` (5, overridable at runtime via `/squad admin revivetime`) / `reviveHealPercent` (30) / `reviveInvulnSeconds` (3) / `allowNonSquadRevive` (false = only squadmates can revive) / `approachAlertEnabled` (true, server config) / `approachAlertRadius` (24, server config)
 
-接近アラートの**ベル音のみ**はプレイヤー個人の好みとしてクライアント設定(`config/squadtp-client.toml` の `bellSoundEnabled`)にあり、GUIの[ON]/[OFF]ボタンでいつでも切り替え可能(サーバーやワールドに依存しない)。
+The **bell sound** alone is a personal preference stored in a client-side config (`config/squadtp-client.toml`, `bellSoundEnabled`), toggleable anytime via the GUI's [ON]/[OFF] button (independent of any server or world).
 
-## 設定 (`world/serverconfig/squadtp-server.toml`)
+## Configuration (`world/serverconfig/squadtp-server.toml`)
 
-- `squad.maxSquadSize` (既定 4) / `squad.inviteExpirySeconds` (既定 120)
-- `squad.requireSameTeam` (既定 true) — バニラのチーム(`/team`)使用時、**分隊リーダーと同じチームのプレイヤーしか分隊に入れない**(両者ともチーム無しはOK、片方だけチーム有りはNG)。招待・承認・参加申請・申請承認のすべてで検証
-- `teleport.tpCooldownSeconds` (既定 60、0で無効)
-- `teleport.tpCostMode` = `NONE` / `XP` / `ITEM` (既定 NONE)
-  - `tpCostXpLevels` (既定 3) / `tpCostItem` (既定 ender_pearl) / `tpCostItemCount` (既定 1)
-- `teleport.combatBlockSeconds` (既定 15、0で無効) — メンバーが被ダメージ後この秒数の間、そのメンバーへの `/squad tp`・リスポーン選択スポーンをブロック(戦闘タグ)
-- `teleport.allowCrossDimensionTp` (既定 true)
-- `teleport.rallyRespawnEnabled` (既定 false) — 有効時、死亡リスポーン後に自動で集合地点へ移動(下の選択画面より優先)
-- `teleport.respawnChoiceEnabled` (既定 true) — 死亡リスポーン後に「スポーン地点を選択」画面を表示(集合地点/オンラインメンバーの近く/そのまま)
-- `teleport.respawnChoiceWindowSeconds` (既定 60) — 選択の有効時間。サーバーがリスポーン直後だけ `/squad respawn` を許可する仕組みで、平常時のテレポートには悪用できない
-- `teleport.spawnDangerRadius` (既定 4、0で無効) — スポーン先のこの半径内に**敵対Mobまたは別チームのプレイヤー**がいる場合、リスポーン選択のスポーンをブロック
-- `sync.posUpdateIntervalTicks` (既定 20) — 位置同期間隔
+- `squad.maxSquadSize` (default 4) / `squad.inviteExpirySeconds` (default 120)
+- `squad.requireSameTeam` (default true) — when vanilla scoreboard teams (`/team`) are in use, **only players on the same team as the squad leader can join** (fine if neither has a team; blocked if only one does). Enforced across invites, accepts, join requests, and approvals
+- `teleport.tpCooldownSeconds` (default 60, 0 disables)
+- `teleport.tpCostMode` = `NONE` / `XP` / `ITEM` (default NONE)
+  - `tpCostXpLevels` (default 3) / `tpCostItem` (default ender_pearl) / `tpCostItemCount` (default 1)
+- `teleport.combatBlockSeconds` (default 15, 0 disables) — after a member takes damage, `/squad tp` to them and respawn-chooser spawning near them are blocked for this many seconds (combat tag)
+- `teleport.allowCrossDimensionTp` (default true)
+- `teleport.rallyRespawnEnabled` (default false) — when enabled, automatically teleports to the rally point after a death respawn (takes precedence over the chooser below)
+- `teleport.respawnChoiceEnabled` (default true) — shows a "choose your respawn point" screen after a death respawn (rally point / near an online member / stay here)
+- `teleport.respawnChoiceWindowSeconds` (default 60) — how long the choice stays valid; the server only allows `/squad respawn` right after a respawn, so it can't be abused as a regular teleport
+- `teleport.spawnDangerRadius` (default 4, 0 disables) — blocks respawn-chooser spawning if a **hostile mob or a player from another team** is within this radius of the destination
+- `sync.posUpdateIntervalTicks` (default 20) — interval between position sync broadcasts
 
-## 設計メモ
+## Design Notes
 
-- **サーバー権威**: 分隊データは `SquadManager` (SavedData) がオーバーワールドに永続化。全操作はコマンド経由(=サーバー側実行)なので、クライアント→サーバーの独自パケットは存在せず、なりすましの余地がない。
-- **同期**: S2Cのみ2種 — `SquadSyncPacket`(構成変更時)と `SquadMemberPosPacket`(定期位置配信、同分隊のみ)。
-- **JourneyMap連携**: `compat/JourneyMapCompat` が唯一の入口。`ModList.isLoaded("journeymap")` が真のときだけ `compat/journeymap/` 以下(API参照クラス)をクラスロードする。プラグイン本体 `SquadJmPlugin` は `@ClientPlugin` 注釈によりJourneyMap側が発見・生成する。
-- 対象APIは **JourneyMap API v1.9**(JourneyMap 1.20.1-5.9.x〜5.10.3 が実装)。
+- **Server-authoritative**: squad data lives in `SquadManager` (a `SavedData`) persisted to the overworld. Every action goes through a command (i.e. runs server-side), so there is no client→server custom packet to spoof.
+- **Sync**: only two S2C packet types exist — `SquadSyncPacket` (on membership/config changes) and `SquadMemberPosPacket` (periodic position broadcast, squad-only).
+- **JourneyMap integration**: `compat/JourneyMapCompat` is the sole entry point. Classes under `compat/journeymap/` (which reference the API) are only classloaded when `ModList.isLoaded("journeymap")` is true. The plugin itself, `SquadJmPlugin`, is discovered and instantiated by JourneyMap via the `@ClientPlugin` annotation.
+- Targets **JourneyMap API v1.9** (implemented by JourneyMap 1.20.1-5.9.x through 5.10.3).
 
-## ビルド・実行
+## Building & Running
 
-要件: JDK 21(Gradle実行用。`gradle.properties` の `org.gradle.java.home` で指定。コンパイルはtoolchainのJava 17)
+Requirement: JDK 21 for running Gradle (set via `org.gradle.java.home` in `gradle.properties`; compilation uses the Java 17 toolchain).
 
 ```
-gradlew build        # → build/libs/squadtp-<version>.jar (配布用)
-gradlew runClient    # 開発用クライアント1 (ユーザー名 Dev1, run/)
-gradlew runClient2   # 開発用クライアント2 (ユーザー名 Dev2, run2/)
-gradlew runServer    # 開発用サーバー (run-server/, online-mode=false設定済み)
+gradlew build        # -> build/libs/squadtp-<version>.jar (for distribution)
+gradlew runClient    # dev client 1 (username Dev1, run/)
+gradlew runClient2   # dev client 2 (username Dev2, run2/)
+gradlew runServer    # dev server (run-server/, online-mode=false already set)
 ```
 
-### 2プレイヤーテスト手順
+### Two-player test procedure
 
-1. ターミナル3つ(またはIDEの実行構成)で `runServer` → `runClient` → `runClient2` を起動
-2. 両クライアントで「マルチプレイ」→ サーバー `localhost` を追加して接続
-3. Dev1で `/squad create` → KキーのGUIから Dev2 を [招待] → Dev2側のGUI/チャットで承認
-   (逆方向は Dev2 が未所属状態のGUIから [参加申請] → Dev1 が [承認])
-4. 互いのTP・位置表示・リスポーン選択などを確認
+1. In three terminals (or IDE run configs), start `runServer`, then `runClient`, then `runClient2`
+2. On both clients: Multiplayer → add server `localhost` → connect
+3. On Dev1: `/squad create` → in the K-key GUI, [Invite] Dev2 → Dev2 accepts from their GUI or chat
+   (the reverse direction: Dev2, while squadless, uses [Request to Join] from their GUI → Dev1 [Approve]s)
+4. Verify mutual TP, position display, respawn chooser, etc.
 
-JourneyMap連携の開発環境テスト: `build.gradle` の `modRuntimeOnly 'curse.maven:journeymap-32274:5789363'` によりJourneyMap 5.10.3が難読化解除(remap)された状態で `runClient` に自動で入る。
-TACZ連携も同様に `modRuntimeOnly 'curse.maven:timeless-and-classics-zero-1028108:8141310'` で開発環境に自動導入される。
-**注意: 配布用のJourneyMap/TACZ jarを `run/mods/` に直接置いてはいけない**(SRG難読化されたままのためMixinが失敗し起動不能になる)。連携を外したいときは `build.gradle` の該当行をコメントアウトする。
+JourneyMap dev-environment testing: `build.gradle`'s `modRuntimeOnly 'curse.maven:journeymap-32274:5789363'` pulls in a remapped (de-obfuscated) copy of JourneyMap 5.10.3 automatically into `runClient`.
+TACZ integration is likewise auto-installed into the dev environment via `modRuntimeOnly 'curse.maven:timeless-and-classics-zero-1028108:8141310'`.
+**Note: never place the distributed JourneyMap/TACZ jar directly into `run/mods/`** (it stays SRG-obfuscated, so its Mixins fail and the game won't launch). To remove an integration from the dev environment, comment out the corresponding line in `build.gradle`.
 
-## 動作確認手順(手動)
+## Manual Verification Steps
 
-1. `gradlew runClient` を2窓、または `runServer` + クライアント接続で2アカウント用意
-2. A: `/squad create` → `/squad invite B` → B: チャットの[参加する]
-3. `/squad info` で2人表示・リーダー表記を確認
-4. 互いに離れて `/squad tp <相手>` → クールダウンメッセージ(2回目)も確認
+1. Run `gradlew runClient` twice, or `runServer` + two client connections, to get two accounts
+2. A: `/squad create` → `/squad invite B` → B: click [Join] in chat
+3. `/squad info` confirms both members and the leader marking
+4. Move apart, then `/squad tp <other player>` → also verify the cooldown message on the second attempt
 5. A: `/squad setrally` → B: `/squad rally`
-6. JourneyMap導入時: フルスクリーンマップにメンバー(色付き)とRally(金色)のウェイポイントが約1秒間隔で追従することを確認
-7. サーバー再起動後も分隊が維持されること(SavedData)を確認
+6. With JourneyMap installed: confirm member waypoints (colored) and the rally waypoint (gold) track on the fullscreen map roughly every second
+7. Confirm the squad survives a server restart (SavedData)
