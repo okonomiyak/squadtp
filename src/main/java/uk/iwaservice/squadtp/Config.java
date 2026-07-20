@@ -14,12 +14,14 @@ public final class Config {
     public static final ForgeConfigSpec.ConfigValue<String> TP_COST_ITEM;
     public static final ForgeConfigSpec.IntValue TP_COST_ITEM_COUNT;
     public static final ForgeConfigSpec.IntValue DOWNED_TIMEOUT_SECONDS;
-    public static final ForgeConfigSpec.IntValue REVIVE_CAST_SECONDS;
+    public static final ForgeConfigSpec.DoubleValue REVIVE_CAST_SECONDS;
     public static final ForgeConfigSpec.IntValue REVIVE_HEAL_PERCENT;
     public static final ForgeConfigSpec.IntValue REVIVE_INVULN_SECONDS;
     public static final ForgeConfigSpec.BooleanValue ALLOW_NON_SQUAD_REVIVE;
     public static final ForgeConfigSpec.BooleanValue APPROACH_ALERT_ENABLED;
     public static final ForgeConfigSpec.IntValue APPROACH_ALERT_RADIUS;
+    public static final ForgeConfigSpec.IntValue GIVE_UP_HOLD_TICKS;
+    public static final ForgeConfigSpec.IntValue BEACON_USES;
     public static final ForgeConfigSpec.IntValue POS_UPDATE_INTERVAL_TICKS;
     public static final ForgeConfigSpec.IntValue INVITE_EXPIRY_SECONDS;
     public static final ForgeConfigSpec.BooleanValue REQUIRE_SAME_TEAM;
@@ -90,7 +92,7 @@ public final class Config {
                 .defineInRange("downedTimeoutSeconds", 30, 5, 600);
         REVIVE_CAST_SECONDS = b
                 .comment("Seconds a rescuer must hold right-click on a downed player to revive them.")
-                .defineInRange("reviveCastSeconds", 5, 1, 60);
+                .defineInRange("reviveCastSeconds", 2.5, 0.5, 60.0);
         REVIVE_HEAL_PERCENT = b
                 .comment("Percent of max health restored on revive.")
                 .defineInRange("reviveHealPercent", 30, 1, 100);
@@ -107,6 +109,16 @@ public final class Config {
         APPROACH_ALERT_RADIUS = b
                 .comment("Radius in blocks for the downed approach alert.")
                 .defineInRange("approachAlertRadius", 24, 4, 128);
+        GIVE_UP_HOLD_TICKS = b
+                .comment("Ticks the give-up key must be held while downed before it triggers (20 ticks = 1 second).",
+                        "Kept meaningfully longer than the revive cast time so giving up isn't strictly faster than being revived.")
+                .defineInRange("giveUpHoldTicks", 60, 1, 200);
+        b.pop();
+
+        b.push("beacon");
+        BEACON_USES = b
+                .comment("Number of times a placed respawn beacon can be used before it's consumed.")
+                .defineInRange("beaconUses", 4, 1, 20);
         b.pop();
 
         b.push("sync");

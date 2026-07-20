@@ -36,6 +36,15 @@ public class Squad {
     @Nullable
     private BlockPos rallyPos;
 
+    /** Active respawn beacon, if any. At most one per squad; placing a new one replaces it. */
+    @Nullable
+    private UUID beaconEntityId;
+    @Nullable
+    private ResourceKey<Level> beaconDimension;
+    @Nullable
+    private BlockPos beaconPos;
+    private int beaconUsesRemaining;
+
     public Squad(UUID id, UUID leader, String leaderName) {
         this.id = id;
         this.leader = leader;
@@ -199,6 +208,50 @@ public class Squad {
         this.rallyPos = pos.immutable();
     }
 
+    // --- respawn beacon ---
+
+    @Nullable
+    public UUID getBeaconEntityId() {
+        return beaconEntityId;
+    }
+
+    @Nullable
+    public ResourceKey<Level> getBeaconDimension() {
+        return beaconDimension;
+    }
+
+    @Nullable
+    public BlockPos getBeaconPos() {
+        return beaconPos;
+    }
+
+    public boolean hasBeacon() {
+        return beaconEntityId != null;
+    }
+
+    public int getBeaconUsesRemaining() {
+        return beaconUsesRemaining;
+    }
+
+    void setBeacon(UUID entityId, ResourceKey<Level> dimension, BlockPos pos, int usesRemaining) {
+        this.beaconEntityId = entityId;
+        this.beaconDimension = dimension;
+        this.beaconPos = pos.immutable();
+        this.beaconUsesRemaining = usesRemaining;
+    }
+
+    /** Returns the remaining uses after decrementing. */
+    int decrementBeaconUses() {
+        return --beaconUsesRemaining;
+    }
+
+    void clearBeacon() {
+        this.beaconEntityId = null;
+        this.beaconDimension = null;
+        this.beaconPos = null;
+        this.beaconUsesRemaining = 0;
+    }
+
     // --- persistence ---
 
     public CompoundTag save() {
@@ -238,6 +291,13 @@ public class Squad {
             tag.putString("RallyDim", rallyDimension.location().toString());
             tag.put("RallyPos", NbtUtils.writeBlockPos(rallyPos));
         }
+
+        if (hasBeacon()) {
+            tag.putUUID("BeaconEntityId", beaconEntityId);
+            tag.putString("BeaconDim", beaconDimension.location().toString());
+            tag.put("BeaconPos", NbtUtils.writeBlockPos(beaconPos));
+            tag.putInt("BeaconUses", beaconUsesRemaining);
+        }
         return tag;
     }
 
@@ -266,6 +326,13 @@ public class Squad {
         if (tag.contains("RallyDim")) {
             squad.rallyDimension = ResourceKey.create(Registries.DIMENSION, new ResourceLocation(tag.getString("RallyDim")));
             squad.rallyPos = NbtUtils.readBlockPos(tag.getCompound("RallyPos"));
+        }
+
+        if (tag.contains("BeaconEntityId")) {
+            squad.beaconEntityId = tag.getUUID("BeaconEntityId");
+            squad.beaconDimension = ResourceKey.create(Registries.DIMENSION, new ResourceLocation(tag.getString("BeaconDim")));
+            squad.beaconPos = NbtUtils.readBlockPos(tag.getCompound("BeaconPos"));
+            squad.beaconUsesRemaining = tag.getInt("BeaconUses");
         }
         return squad;
     }

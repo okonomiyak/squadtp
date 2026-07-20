@@ -39,5 +39,10 @@ public final class ClientModEvents {
         event.registerAboveAll("downed", uk.iwaservice.squadtp.client.gui.DownedHudOverlay.INSTANCE);
     }
 
+    @SubscribeEvent
+    public static void onRegisterRenderers(net.minecraftforge.client.event.EntityRenderersEvent.RegisterRenderers event) {
+        event.registerEntityRenderer(uk.iwaservice.squadtp.ModRegistry.RESPAWN_BEACON.get(), RespawnBeaconRenderer::new);
+    }
+
     private ClientModEvents() {}
 }

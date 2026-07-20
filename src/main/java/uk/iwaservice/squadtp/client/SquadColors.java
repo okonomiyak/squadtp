@@ -10,6 +10,7 @@ public final class SquadColors {
             0xFF5555, 0x55FF55, 0x5599FF, 0xFFFF55, 0xFF55FF, 0x55FFFF, 0xFFAA55, 0xAAAAFF};
 
     public static final int RALLY_COLOR = 0xFFAA00;
+    public static final int BEACON_COLOR = 0xFF3355;
 
     /** RGB color (no alpha) for the member at the given join-order slot. */
     public static int memberColor(int slot) {

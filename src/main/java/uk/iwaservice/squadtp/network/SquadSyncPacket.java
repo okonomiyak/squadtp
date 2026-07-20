@@ -28,7 +28,10 @@ public record SquadSyncPacket(boolean inSquad,
                               @Nullable ResourceLocation rallyDim,
                               @Nullable BlockPos rallyPos,
                               List<String> joinRequests,
-                              @Nullable String invitedBy) {
+                              @Nullable String invitedBy,
+                              @Nullable ResourceLocation beaconDim,
+                              @Nullable BlockPos beaconPos,
+                              int beaconUsesRemaining) {
 
     public record Entry(UUID uuid, String name) {}
 
@@ -38,17 +41,19 @@ public record SquadSyncPacket(boolean inSquad,
             members.add(new Entry(e.getKey(), e.getValue()));
         }
         ResourceLocation rallyDim = squad.hasRally() ? squad.getRallyDimension().location() : null;
+        ResourceLocation beaconDim = squad.hasBeacon() ? squad.getBeaconDimension().location() : null;
         return new SquadSyncPacket(true, squad.getId(), squad.getLeader(), members,
-                rallyDim, squad.getRallyPos(), squad.getJoinRequestNames(), null);
+                rallyDim, squad.getRallyPos(), squad.getJoinRequestNames(), null,
+                beaconDim, squad.getBeaconPos(), squad.getBeaconUsesRemaining());
     }
 
     public static SquadSyncPacket empty() {
-        return new SquadSyncPacket(false, null, null, List.of(), null, null, List.of(), null);
+        return new SquadSyncPacket(false, null, null, List.of(), null, null, List.of(), null, null, null, 0);
     }
 
     /** Sent to a non-member to surface a pending invite in their GUI. */
     public static SquadSyncPacket invited(String inviterName) {
-        return new SquadSyncPacket(false, null, null, List.of(), null, null, List.of(), inviterName);
+        return new SquadSyncPacket(false, null, null, List.of(), null, null, List.of(), inviterName, null, null, 0);
     }
 
     public static void encode(SquadSyncPacket msg, FriendlyByteBuf buf) {
@@ -70,6 +75,12 @@ public record SquadSyncPacket(boolean inSquad,
             for (String name : msg.joinRequests) {
                 buf.writeUtf(name);
             }
+            buf.writeBoolean(msg.beaconDim != null && msg.beaconPos != null);
+            if (msg.beaconDim != null && msg.beaconPos != null) {
+                buf.writeResourceLocation(msg.beaconDim);
+                buf.writeBlockPos(msg.beaconPos);
+                buf.writeVarInt(msg.beaconUsesRemaining);
+            }
         } else {
             buf.writeBoolean(msg.invitedBy != null);
             if (msg.invitedBy != null) {
@@ -81,7 +92,7 @@ public record SquadSyncPacket(boolean inSquad,
     public static SquadSyncPacket decode(FriendlyByteBuf buf) {
         if (!buf.readBoolean()) {
             String invitedBy = buf.readBoolean() ? buf.readUtf() : null;
-            return new SquadSyncPacket(false, null, null, List.of(), null, null, List.of(), invitedBy);
+            return new SquadSyncPacket(false, null, null, List.of(), null, null, List.of(), invitedBy, null, null, 0);
         }
         UUID squadId = buf.readUUID();
         UUID leader = buf.readUUID();
@@ -101,7 +112,16 @@ public record SquadSyncPacket(boolean inSquad,
         for (int i = 0; i < requestCount; i++) {
             joinRequests.add(buf.readUtf());
         }
-        return new SquadSyncPacket(true, squadId, leader, members, rallyDim, rallyPos, joinRequests, null);
+        ResourceLocation beaconDim = null;
+        BlockPos beaconPos = null;
+        int beaconUsesRemaining = 0;
+        if (buf.readBoolean()) {
+            beaconDim = buf.readResourceLocation();
+            beaconPos = buf.readBlockPos();
+            beaconUsesRemaining = buf.readVarInt();
+        }
+        return new SquadSyncPacket(true, squadId, leader, members, rallyDim, rallyPos, joinRequests, null,
+                beaconDim, beaconPos, beaconUsesRemaining);
     }
 
     public static void handle(SquadSyncPacket msg, java.util.function.Supplier<NetworkEvent.Context> ctx) {

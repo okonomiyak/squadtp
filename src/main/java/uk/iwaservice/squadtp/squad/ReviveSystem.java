@@ -120,7 +120,7 @@ public final class ReviveSystem {
         }
 
         int now = server.getTickCount();
-        int castTicks = SquadManager.get(server).getReviveCastSeconds() * 20;
+        int castTicks = Math.max(1, (int) Math.round(SquadManager.get(server).getReviveCastSeconds() * 20));
         Iterator<Map.Entry<UUID, ReviveSession>> sessions = SESSIONS.entrySet().iterator();
         while (sessions.hasNext()) {
             Map.Entry<UUID, ReviveSession> entry = sessions.next();

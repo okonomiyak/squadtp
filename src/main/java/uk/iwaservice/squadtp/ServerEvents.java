@@ -266,8 +266,10 @@ public final class ServerEvents {
             return;
         }
 
-        // Automatic rally respawn takes precedence over the chooser.
-        if (Config.RALLY_RESPAWN_ENABLED.get() && squad.hasRally() && manager.isEnabled(SquadFeature.RALLY)) {
+        // Automatic rally respawn takes precedence over the chooser. Gated by RESPAWN_CHOICE (the
+        // spawn-time switch) rather than RALLY (the anytime /squad rally switch), so admins can
+        // disable "teleport on respawn" without also disabling walking up to the rally point anytime.
+        if (Config.RALLY_RESPAWN_ENABLED.get() && squad.hasRally() && manager.isEnabled(SquadFeature.RESPAWN_CHOICE)) {
             ServerLevel targetLevel = player.server.getLevel(squad.getRallyDimension());
             if (targetLevel != null) {
                 BlockPos safe = TeleportHelper.findSafeSpot(targetLevel, squad.getRallyPos());
@@ -300,14 +302,17 @@ public final class ServerEvents {
                 }
             }
         }
-        if (!squad.hasRally() && targets.isEmpty()) {
+        if (!squad.hasRally() && !squad.hasBeacon() && targets.isEmpty()) {
             return;
         }
         manager.markRespawnChoice(player.getUUID());
         NetworkHandler.sendRespawnChoice(player, new RespawnChoicePacket(
                 squad.hasRally() ? squad.getRallyDimension().location() : null,
                 squad.hasRally() ? squad.getRallyPos() : null,
-                targets, Config.RESPAWN_CHOICE_WINDOW_SECONDS.get()));
+                targets, Config.RESPAWN_CHOICE_WINDOW_SECONDS.get(),
+                squad.hasBeacon() ? squad.getBeaconDimension().location() : null,
+                squad.hasBeacon() ? squad.getBeaconPos() : null,
+                squad.getBeaconUsesRemaining()));
     }
 
     private ServerEvents() {}

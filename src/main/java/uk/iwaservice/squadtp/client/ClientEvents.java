@@ -42,16 +42,13 @@ public final class ClientEvents {
         }
         if (mc.player != null && ClientReviveData.getDownedRemainingTicks() >= 0
                 && ClientModEvents.GIVE_UP.isDown()) {
-            if (ClientReviveData.incrementGiveUpHold() == GIVE_UP_HOLD_TICKS) {
+            if (ClientReviveData.incrementGiveUpHold() >= uk.iwaservice.squadtp.Config.GIVE_UP_HOLD_TICKS.get()) {
                 mc.player.connection.sendCommand("squad giveup");
             }
         } else {
             ClientReviveData.resetGiveUpHold();
         }
     }
-
-    /** Ticks the give-up key must be held (1.5s). */
-    public static final int GIVE_UP_HOLD_TICKS = 30;
 
     @SubscribeEvent
     public static void onClientRespawn(ClientPlayerNetworkEvent.Clone event) {

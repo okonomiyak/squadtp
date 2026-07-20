@@ -129,5 +129,19 @@
   "squadtp.hud.giveup_hint": "%s キー長押しで諦める",
   "squadtp.msg.not_downed": "ダウン中のみ使用できます。",
   "squadtp.msg.spawn_danger": "スポーン先の近くに敵がいるためスポーンできません。",
-  "squadtp.msg.target_downed": "%s はダウン中のためテレポートできません。"
+  "squadtp.msg.target_downed": "%s はダウン中のためテレポートできません。",
+  "squadtp.feature.beacon": "リスポーンビーコン",
+  "squadtp.msg.no_beacon": "分隊にリスポーンビーコンが設置されていません。",
+  "squadtp.msg.beacon_tp": "リスポーンビーコンへテレポートしました。",
+  "squadtp.msg.beacon_placed": "リスポーンビーコンを設置しました(残り%s回)。",
+  "squadtp.msg.beacon_uses_left": "リスポーンビーコンを使用しました(残り%s回)。",
+  "squadtp.msg.beacon_depleted": "リスポーンビーコンは使い切って消滅しました。",
+  "squadtp.msg.beacon_destroyed": "リスポーンビーコンが破壊されました!",
+  "squadtp.gui.section_beacon": "リスポーンビーコン",
+  "squadtp.gui.beacon_uses": "残り%s回",
+  "squadtp.gui.beacon_none": "リスポーンビーコンは未設置です",
+  "squadtp.gui.tooltip.beacon": "リスポーンビーコンへテレポート",
+  "squadtp.gui.respawn_beacon": "リスポーンビーコン",
+  "entity.squadtp.respawn_beacon": "リスポーンビーコン",
+  "item.squadtp.respawn_beacon": "リスポーンビーコン"
 }

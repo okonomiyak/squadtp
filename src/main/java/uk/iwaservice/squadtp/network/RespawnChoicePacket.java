@@ -21,12 +21,19 @@ import java.util.UUID;
 public record RespawnChoicePacket(@Nullable ResourceLocation rallyDim,
                                   @Nullable BlockPos rallyPos,
                                   List<Entry> members,
-                                  int windowSeconds) {
+                                  int windowSeconds,
+                                  @Nullable ResourceLocation beaconDim,
+                                  @Nullable BlockPos beaconPos,
+                                  int beaconUsesRemaining) {
 
     public record Entry(UUID uuid, String name, ResourceLocation dimension, BlockPos pos) {}
 
     public boolean hasRally() {
         return rallyDim != null && rallyPos != null;
+    }
+
+    public boolean hasBeacon() {
+        return beaconDim != null && beaconPos != null;
     }
 
     public static void encode(RespawnChoicePacket msg, FriendlyByteBuf buf) {
@@ -43,6 +50,12 @@ public record RespawnChoicePacket(@Nullable ResourceLocation rallyDim,
             buf.writeBlockPos(e.pos());
         }
         buf.writeVarInt(msg.windowSeconds);
+        buf.writeBoolean(msg.hasBeacon());
+        if (msg.hasBeacon()) {
+            buf.writeResourceLocation(msg.beaconDim);
+            buf.writeBlockPos(msg.beaconPos);
+            buf.writeVarInt(msg.beaconUsesRemaining);
+        }
     }
 
     public static RespawnChoicePacket decode(FriendlyByteBuf buf) {
@@ -57,7 +70,16 @@ public record RespawnChoicePacket(@Nullable ResourceLocation rallyDim,
         for (int i = 0; i < count; i++) {
             members.add(new Entry(buf.readUUID(), buf.readUtf(), buf.readResourceLocation(), buf.readBlockPos()));
         }
-        return new RespawnChoicePacket(rallyDim, rallyPos, members, buf.readVarInt());
+        int windowSeconds = buf.readVarInt();
+        ResourceLocation beaconDim = null;
+        BlockPos beaconPos = null;
+        int beaconUsesRemaining = 0;
+        if (buf.readBoolean()) {
+            beaconDim = buf.readResourceLocation();
+            beaconPos = buf.readBlockPos();
+            beaconUsesRemaining = buf.readVarInt();
+        }
+        return new RespawnChoicePacket(rallyDim, rallyPos, members, windowSeconds, beaconDim, beaconPos, beaconUsesRemaining);
     }
 
     public static void handle(RespawnChoicePacket msg, java.util.function.Supplier<NetworkEvent.Context> ctx) {

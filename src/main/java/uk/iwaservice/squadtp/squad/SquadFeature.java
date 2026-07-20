@@ -17,7 +17,8 @@ public enum SquadFeature {
     RESPAWN_CHOICE("respawn"),
     POSITION_SHARING("positions"),
     DUMMY("dummy"),
-    REVIVE("revive");
+    REVIVE("revive"),
+    BEACON("beacon");
 
     private final String key;
 

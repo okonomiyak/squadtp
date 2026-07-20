@@ -6,6 +6,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.SavedData;
@@ -33,7 +34,7 @@ public class SquadManager extends SavedData {
     private final java.util.Set<SquadFeature> disabledFeatures = java.util.EnumSet.noneOf(SquadFeature.class);
     /** Runtime override for the revive cast duration in seconds; null = use the config default. */
     @Nullable
-    private Integer reviveCastSecondsOverride;
+    private Double reviveCastSecondsOverride;
     /** Transient teleport cooldowns: player UUID -> epoch millis of last squad teleport. */
     private final Map<UUID, Long> lastTeleport = new HashMap<>();
     /** Transient respawn-choice windows: player UUID -> epoch millis of respawn. */
@@ -143,17 +144,17 @@ public class SquadManager extends SavedData {
     // --- revive cast time override ---
 
     /** Effective revive cast duration in seconds: the admin override if set, else the config default. */
-    public int getReviveCastSeconds() {
+    public double getReviveCastSeconds() {
         return reviveCastSecondsOverride != null ? reviveCastSecondsOverride : Config.REVIVE_CAST_SECONDS.get();
     }
 
     @Nullable
-    public Integer getReviveCastSecondsOverride() {
+    public Double getReviveCastSecondsOverride() {
         return reviveCastSecondsOverride;
     }
 
     /** Pass null to clear the override and fall back to the config default. */
-    public void setReviveCastSecondsOverride(@Nullable Integer seconds) {
+    public void setReviveCastSecondsOverride(@Nullable Double seconds) {
         this.reviveCastSecondsOverride = seconds;
         setDirty();
     }
@@ -232,6 +233,73 @@ public class SquadManager extends SavedData {
         squad.setRally(dimension, pos);
         setDirty();
         sync(server, squad);
+    }
+
+    // --- respawn beacon ---
+
+    /**
+     * Registers a newly placed beacon entity as the squad's active one,
+     * discarding any previous beacon entity that's still loaded (at most one
+     * beacon per squad at a time).
+     */
+    public void placeBeacon(MinecraftServer server, Squad squad, net.minecraft.world.entity.Entity beaconEntity,
+                            int startingUses) {
+        discardExistingBeacon(server, squad);
+        squad.setBeacon(beaconEntity.getUUID(), beaconEntity.level().dimension(), beaconEntity.blockPosition(), startingUses);
+        setDirty();
+        sync(server, squad);
+        broadcast(server, squad, "squadtp.msg.beacon_placed", startingUses);
+    }
+
+    private void discardExistingBeacon(MinecraftServer server, Squad squad) {
+        if (!squad.hasBeacon()) {
+            return;
+        }
+        ServerLevel oldLevel = server.getLevel(squad.getBeaconDimension());
+        if (oldLevel != null) {
+            net.minecraft.world.entity.Entity old = oldLevel.getEntity(squad.getBeaconEntityId());
+            if (old != null) {
+                old.discard();
+            }
+        }
+    }
+
+    /**
+     * Consumes one use of the squad's beacon after a successful teleport to
+     * it. Once uses reach zero the beacon entity is removed and the squad's
+     * beacon is cleared.
+     */
+    public void consumeBeaconUse(MinecraftServer server, Squad squad) {
+        int remaining = squad.decrementBeaconUses();
+        if (remaining <= 0) {
+            discardExistingBeacon(server, squad);
+            squad.clearBeacon();
+            setDirty();
+            sync(server, squad);
+            broadcast(server, squad, "squadtp.msg.beacon_depleted");
+        } else {
+            setDirty();
+            sync(server, squad);
+            broadcast(server, squad, "squadtp.msg.beacon_uses_left", remaining);
+        }
+    }
+
+    /** Called by the beacon entity itself when it dies from combat damage. */
+    public void onBeaconDestroyed(MinecraftServer server, Squad squad) {
+        squad.clearBeacon();
+        setDirty();
+        sync(server, squad);
+        broadcast(server, squad, "squadtp.msg.beacon_destroyed");
+    }
+
+    /** Sends a translatable message to every online member of the squad. */
+    private void broadcast(MinecraftServer server, Squad squad, String key, Object... args) {
+        for (UUID member : squad.getMembers().keySet()) {
+            ServerPlayer online = server.getPlayerList().getPlayer(member);
+            if (online != null) {
+                online.sendSystemMessage(net.minecraft.network.chat.Component.translatable(key, args));
+            }
+        }
     }
 
     public void updateName(ServerPlayer player) {
@@ -339,7 +407,7 @@ public class SquadManager extends SavedData {
             }
         }
         if (tag.contains("ReviveCastSecondsOverride")) {
-            manager.reviveCastSecondsOverride = tag.getInt("ReviveCastSecondsOverride");
+            manager.reviveCastSecondsOverride = tag.getDouble("ReviveCastSecondsOverride");
         }
         return manager;
     }
@@ -362,7 +430,7 @@ public class SquadManager extends SavedData {
         }
         tag.put("DisabledFeatures", featureList);
         if (reviveCastSecondsOverride != null) {
-            tag.putInt("ReviveCastSecondsOverride", reviveCastSecondsOverride);
+            tag.putDouble("ReviveCastSecondsOverride", reviveCastSecondsOverride);
         }
         return tag;
     }

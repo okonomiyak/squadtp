@@ -33,6 +33,11 @@ public final class SquadClientData {
     /** Who invited us, when we are not in a squad and an invite is pending. */
     @Nullable
     private static String invitedBy;
+    @Nullable
+    private static ResourceLocation beaconDimension;
+    @Nullable
+    private static BlockPos beaconPos;
+    private static int beaconUsesRemaining;
     /** Incremented on every data change; lets the GUI detect updates cheaply. */
     private static int revision;
 
@@ -43,7 +48,9 @@ public final class SquadClientData {
     public static synchronized void applySync(boolean nowInSquad, @Nullable UUID newLeader,
                                               Map<UUID, String> newMembers,
                                               @Nullable ResourceLocation newRallyDim, @Nullable BlockPos newRallyPos,
-                                              java.util.List<String> newJoinRequests, @Nullable String newInvitedBy) {
+                                              java.util.List<String> newJoinRequests, @Nullable String newInvitedBy,
+                                              @Nullable ResourceLocation newBeaconDim, @Nullable BlockPos newBeaconPos,
+                                              int newBeaconUsesRemaining) {
         inSquad = nowInSquad;
         leader = newLeader;
         members.clear();
@@ -53,6 +60,9 @@ public final class SquadClientData {
         rallyPos = newRallyPos;
         joinRequests = java.util.List.copyOf(newJoinRequests);
         invitedBy = newInvitedBy;
+        beaconDimension = newBeaconDim;
+        beaconPos = newBeaconPos;
+        beaconUsesRemaining = newBeaconUsesRemaining;
         revision++;
     }
 
@@ -75,6 +85,9 @@ public final class SquadClientData {
         rallyPos = null;
         joinRequests = java.util.List.of();
         invitedBy = null;
+        beaconDimension = null;
+        beaconPos = null;
+        beaconUsesRemaining = 0;
         revision++;
     }
 
@@ -112,6 +125,24 @@ public final class SquadClientData {
     @Nullable
     public static synchronized BlockPos getRallyPos() {
         return rallyPos;
+    }
+
+    public static synchronized boolean hasBeacon() {
+        return beaconDimension != null && beaconPos != null;
+    }
+
+    @Nullable
+    public static synchronized ResourceLocation getBeaconDimension() {
+        return beaconDimension;
+    }
+
+    @Nullable
+    public static synchronized BlockPos getBeaconPos() {
+        return beaconPos;
+    }
+
+    public static synchronized int getBeaconUsesRemaining() {
+        return beaconUsesRemaining;
     }
 
     private SquadClientData() {}

@@ -1,6 +1,7 @@
 package uk.iwaservice.squadtp.command;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
@@ -85,8 +86,10 @@ public final class SquadCommand {
                                 .suggests(SQUAD_MEMBER_NAMES).executes(ctx -> teleport(ctx))))
                 .then(Commands.literal("setrally").executes(ctx -> setRally(ctx)))
                 .then(Commands.literal("rally").executes(ctx -> rally(ctx)))
+                .then(Commands.literal("beacon").executes(ctx -> beacon(ctx)))
                 .then(Commands.literal("respawn")
                         .then(Commands.literal("rally").executes(ctx -> respawnRally(ctx)))
+                        .then(Commands.literal("beacon").executes(ctx -> respawnBeacon(ctx)))
                         .then(Commands.literal("member")
                                 .then(Commands.argument("member", StringArgumentType.word())
                                         .suggests(SQUAD_MEMBER_NAMES).executes(ctx -> respawnMember(ctx)))))
@@ -102,7 +105,7 @@ public final class SquadCommand {
                                         .suggests(FEATURE_KEYS).executes(ctx -> adminSet(ctx, false))))
                         .then(Commands.literal("revivetime")
                                 .then(Commands.literal("reset").executes(ctx -> adminResetReviveTime(ctx)))
-                                .then(Commands.argument("seconds", IntegerArgumentType.integer(1, 60))
+                                .then(Commands.argument("seconds", DoubleArgumentType.doubleArg(0.5, 60.0))
                                         .executes(ctx -> adminSetReviveTime(ctx))))));
     }
 
@@ -145,7 +148,7 @@ public final class SquadCommand {
 
     /** Sets an admin-overridden revive cast duration; persists until reset back to the config default. */
     private static int adminSetReviveTime(CommandContext<CommandSourceStack> ctx) {
-        int seconds = IntegerArgumentType.getInteger(ctx, "seconds");
+        double seconds = DoubleArgumentType.getDouble(ctx, "seconds");
         manager(ctx).setReviveCastSecondsOverride(seconds);
         ctx.getSource().sendSuccess(() -> Component.translatable("squadtp.msg.admin_revivetime_set", seconds), true);
         return 1;
@@ -228,6 +231,45 @@ public final class SquadCommand {
         player.teleportTo(targetLevel, safe.getX() + 0.5, safe.getY(), safe.getZ() + 0.5,
                 java.util.Set.of(), player.getYRot(), player.getXRot());
         ctx.getSource().sendSuccess(() -> Component.translatable("squadtp.msg.rally_tp"), false);
+        return 1;
+    }
+
+    private static int respawnBeacon(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        ServerPlayer player = ctx.getSource().getPlayerOrException();
+        MinecraftServer server = ctx.getSource().getServer();
+        SquadManager manager = manager(ctx);
+        // Gated by RESPAWN_CHOICE (the spawn-time switch), not BEACON (the anytime /squad beacon switch),
+        // so admins can toggle "teleport on respawn" independently of "teleport anytime".
+        if (featureBlocked(ctx, SquadFeature.RESPAWN_CHOICE)) {
+            return 0;
+        }
+        if (uk.iwaservice.squadtp.squad.ReviveSystem.isDowned(player.getUUID())) {
+            return fail(ctx, "squadtp.msg.you_are_downed");
+        }
+
+        Squad squad = manager.getSquadOf(player.getUUID());
+        if (squad == null) {
+            return fail(ctx, "squadtp.msg.not_in_squad");
+        }
+        if (!squad.hasBeacon()) {
+            return fail(ctx, "squadtp.msg.no_beacon");
+        }
+        ServerLevel targetLevel = server.getLevel(squad.getBeaconDimension());
+        if (targetLevel == null) {
+            return fail(ctx, "squadtp.msg.no_beacon");
+        }
+        if (TeleportHelper.isDestinationDangerous(targetLevel, squad.getBeaconPos(), player)) {
+            return fail(ctx, "squadtp.msg.spawn_danger");
+        }
+        if (!manager.consumeRespawnChoice(player.getUUID())) {
+            return fail(ctx, "squadtp.msg.respawn_expired");
+        }
+
+        BlockPos safe = TeleportHelper.findSafeSpot(targetLevel, squad.getBeaconPos());
+        player.teleportTo(targetLevel, safe.getX() + 0.5, safe.getY(), safe.getZ() + 0.5,
+                java.util.Set.of(), player.getYRot(), player.getXRot());
+        manager.consumeBeaconUse(server, squad);
+        ctx.getSource().sendSuccess(() -> Component.translatable("squadtp.msg.beacon_tp"), false);
         return 1;
     }
 
@@ -761,6 +803,37 @@ public final class SquadCommand {
             return 0;
         }
         ctx.getSource().sendSuccess(() -> Component.translatable("squadtp.msg.rally_tp"), false);
+        return 1;
+    }
+
+    /** Anytime (not just after death) teleport to the squad's beacon; subject to the normal tp cooldown/cost. */
+    private static int beacon(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        ServerPlayer player = ctx.getSource().getPlayerOrException();
+        MinecraftServer server = ctx.getSource().getServer();
+        SquadManager manager = manager(ctx);
+        if (featureBlocked(ctx, SquadFeature.BEACON)) {
+            return 0;
+        }
+
+        Squad squad = manager.getSquadOf(player.getUUID());
+        if (squad == null) {
+            return fail(ctx, "squadtp.msg.not_in_squad");
+        }
+        if (!squad.hasBeacon()) {
+            return fail(ctx, "squadtp.msg.no_beacon");
+        }
+        ServerLevel targetLevel = server.getLevel(squad.getBeaconDimension());
+        if (targetLevel == null) {
+            return fail(ctx, "squadtp.msg.no_beacon");
+        }
+
+        Component failure = TeleportHelper.attempt(manager, player, targetLevel, squad.getBeaconPos());
+        if (failure != null) {
+            ctx.getSource().sendFailure(failure);
+            return 0;
+        }
+        manager.consumeBeaconUse(server, squad);
+        ctx.getSource().sendSuccess(() -> Component.translatable("squadtp.msg.beacon_tp"), false);
         return 1;
     }
 

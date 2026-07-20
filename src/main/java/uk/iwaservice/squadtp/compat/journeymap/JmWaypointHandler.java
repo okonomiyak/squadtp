@@ -55,6 +55,11 @@ public final class JmWaypointHandler {
             show(api, waypoint("rally", "Rally", rallyDim, rallyPos,
                     uk.iwaservice.squadtp.client.SquadColors.RALLY_COLOR));
         }
+
+        if (SquadClientData.hasBeacon()) {
+            show(api, waypoint("beacon", "Beacon", SquadClientData.getBeaconDimension(), SquadClientData.getBeaconPos(),
+                    uk.iwaservice.squadtp.client.SquadColors.BEACON_COLOR));
+        }
     }
 
     private static Waypoint waypoint(String id, String name, ResourceLocation dimension, BlockPos pos, int color) {

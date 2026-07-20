@@ -42,7 +42,7 @@ public class DownedHudOverlay implements IGuiOverlay {
                 int y = height / 2 - 10;
                 graphics.fill(x - 1, y - 1, x + barWidth + 1, y + 4, 0xA0000000);
                 int fill = (int) (barWidth * Math.min(1f,
-                        hold / (float) uk.iwaservice.squadtp.client.ClientEvents.GIVE_UP_HOLD_TICKS));
+                        hold / (float) uk.iwaservice.squadtp.Config.GIVE_UP_HOLD_TICKS.get()));
                 graphics.fill(x, y, x + fill, y + 3, 0xFFDF6F6F);
             }
         }

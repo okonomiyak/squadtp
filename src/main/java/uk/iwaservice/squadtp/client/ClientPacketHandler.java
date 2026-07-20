@@ -20,7 +20,7 @@ public final class ClientPacketHandler {
             members.put(e.uuid(), e.name());
         }
         SquadClientData.applySync(msg.inSquad(), msg.leader(), members, msg.rallyDim(), msg.rallyPos(),
-                msg.joinRequests(), msg.invitedBy());
+                msg.joinRequests(), msg.invitedBy(), msg.beaconDim(), msg.beaconPos(), msg.beaconUsesRemaining());
         JourneyMapCompat.refresh();
     }
 

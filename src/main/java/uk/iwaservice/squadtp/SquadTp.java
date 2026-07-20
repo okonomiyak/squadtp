@@ -19,10 +19,15 @@ public class SquadTp {
         var modBus = FMLJavaModLoadingContext.get().getModEventBus();
         modBus.addListener(this::commonSetup);
         modBus.addListener(this::buildCreativeTabs);
+        modBus.addListener(this::registerAttributes);
         ModRegistry.register(modBus);
         ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, Config.SPEC);
         ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, uk.iwaservice.squadtp.client.ClientConfig.SPEC);
         MinecraftForge.EVENT_BUS.register(ServerEvents.class);
+    }
+
+    private void registerAttributes(net.minecraftforge.event.entity.EntityAttributeCreationEvent event) {
+        event.put(ModRegistry.RESPAWN_BEACON.get(), uk.iwaservice.squadtp.entity.RespawnBeaconEntity.createAttributes().build());
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {
@@ -34,6 +39,7 @@ public class SquadTp {
     private void buildCreativeTabs(net.minecraftforge.event.BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == net.minecraft.world.item.CreativeModeTabs.FUNCTIONAL_BLOCKS) {
             event.accept(ModRegistry.DUMMY_PLAYER_ITEM.get());
+            event.accept(ModRegistry.RESPAWN_BEACON_ITEM.get());
         }
     }
 }

@@ -129,5 +129,19 @@
   "squadtp.hud.giveup_hint": "Hold %s to give up",
   "squadtp.msg.not_downed": "Only usable while downed.",
   "squadtp.msg.spawn_danger": "Cannot spawn there: enemies are nearby.",
-  "squadtp.msg.target_downed": "%s is downed; you cannot teleport to them."
+  "squadtp.msg.target_downed": "%s is downed; you cannot teleport to them.",
+  "squadtp.feature.beacon": "Respawn beacon",
+  "squadtp.msg.no_beacon": "Your squad has no active respawn beacon.",
+  "squadtp.msg.beacon_tp": "Teleported to the respawn beacon.",
+  "squadtp.msg.beacon_placed": "Respawn beacon placed (%s uses).",
+  "squadtp.msg.beacon_uses_left": "Respawn beacon used: %s uses left.",
+  "squadtp.msg.beacon_depleted": "The respawn beacon has been used up and is gone.",
+  "squadtp.msg.beacon_destroyed": "The respawn beacon was destroyed!",
+  "squadtp.gui.section_beacon": "Respawn Beacon",
+  "squadtp.gui.beacon_uses": "%s uses left",
+  "squadtp.gui.beacon_none": "No respawn beacon placed",
+  "squadtp.gui.tooltip.beacon": "Teleport to the respawn beacon",
+  "squadtp.gui.respawn_beacon": "Respawn Beacon",
+  "entity.squadtp.respawn_beacon": "Respawn Beacon",
+  "item.squadtp.respawn_beacon": "Respawn Beacon"
 }

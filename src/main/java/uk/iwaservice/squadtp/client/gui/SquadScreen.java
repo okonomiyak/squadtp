@@ -301,6 +301,23 @@ public class SquadScreen extends Screen {
         }
         cursor += ROW_H;
 
+        section("squadtp.gui.section_beacon");
+        if (SquadClientData.hasBeacon()) {
+            ResourceLocation beaconDim = SquadClientData.getBeaconDimension();
+            BlockPos beaconPos = SquadClientData.getBeaconPos();
+            rect(PAD, cursor + 3, 8, 8, 0xFF000000 | SquadColors.BEACON_COLOR);
+            text(PAD + 14, cursor + 3, Component.literal("%d, %d, %d".formatted(
+                    beaconPos.getX(), beaconPos.getY(), beaconPos.getZ())), COLOR_TEXT);
+            text(PAD + 14, cursor + 14, Component.translatable("squadtp.gui.beacon_uses",
+                    SquadClientData.getBeaconUsesRemaining()).withStyle(ChatFormatting.GOLD), COLOR_TEXT_FAINT);
+            button(panelWidth - PAD - 60, cursor, 60, Component.translatable("squadtp.gui.rally"),
+                    Component.translatable("squadtp.gui.tooltip.beacon"),
+                    () -> { command("squad beacon"); onClose(); });
+        } else {
+            text(PAD, cursor + 6, Component.translatable("squadtp.gui.beacon_none"), COLOR_TEXT_FAINT);
+        }
+        cursor += ROW_H;
+
         if (isLeader) {
             List<String> requests = SquadClientData.getJoinRequests();
             if (!requests.isEmpty()) {

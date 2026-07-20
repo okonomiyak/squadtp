@@ -71,7 +71,7 @@ public class RespawnChoiceScreen extends Screen {
 
     @Override
     protected void init() {
-        int rows = (data.hasRally() ? 1 : 0) + data.members().size();
+        int rows = (data.hasRally() ? 1 : 0) + (data.hasBeacon() ? 1 : 0) + data.members().size();
         panelWidth = Math.min(PAD * 3 + LIST_WIDTH + MAP_SIZE, this.width - 12);
         panelHeight = Math.max(HEADER_H + 8 + 14 + rows * ROW_H + 8 + 24 + PAD,
                 HEADER_H + 8 + MAP_SIZE + 12 + 24 + PAD);
@@ -98,6 +98,12 @@ public class RespawnChoiceScreen extends Screen {
         if (data.hasRally()) {
             addRenderableWidget(Button.builder(Component.translatable("squadtp.gui.respawn_go"),
                             b -> { command("squad respawn rally"); onClose(); })
+                    .bounds(buttonX, y, 60, 20).build());
+            y += ROW_H;
+        }
+        if (data.hasBeacon()) {
+            addRenderableWidget(Button.builder(Component.translatable("squadtp.gui.respawn_go"),
+                            b -> { command("squad respawn beacon"); onClose(); })
                     .bounds(buttonX, y, 60, 20).build());
             y += ROW_H;
         }
@@ -211,6 +217,14 @@ public class RespawnChoiceScreen extends Screen {
             graphics.drawString(this.font, locationInfo(data.rallyDim(), data.rallyPos()), x + 14, y + 13, 0x6A7188);
             y += ROW_H;
         }
+        if (data.hasBeacon()) {
+            graphics.fill(x, y + 6, x + 8, y + 14, 0xFF000000 | SquadColors.BEACON_COLOR);
+            graphics.drawString(this.font, Component.translatable("squadtp.gui.respawn_beacon"), x + 14, y + 2, 0xFFFFFF);
+            Component beaconInfo = locationInfo(data.beaconDim(), data.beaconPos())
+                    .copy().append(" (" + data.beaconUsesRemaining() + ")");
+            graphics.drawString(this.font, beaconInfo, x + 14, y + 13, 0x6A7188);
+            y += ROW_H;
+        }
         int slot = 0;
         for (RespawnChoicePacket.Entry member : data.members()) {
             int color = SquadColors.memberColor(slot++);
@@ -262,6 +276,9 @@ public class RespawnChoiceScreen extends Screen {
         // Markers: rally, members (same dimension only), self.
         if (data.hasRally() && mapDim.equals(data.rallyDim())) {
             drawMarker(graphics, data.rallyPos(), 0xFF000000 | SquadColors.RALLY_COLOR, 3);
+        }
+        if (data.hasBeacon() && mapDim.equals(data.beaconDim())) {
+            drawMarker(graphics, data.beaconPos(), 0xFF000000 | SquadColors.BEACON_COLOR, 3);
         }
         int slot = 0;
         for (RespawnChoicePacket.Entry member : data.members()) {

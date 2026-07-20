@@ -35,6 +35,7 @@ GNU General Public License v3.0 (GPL-3.0-only). See [`LICENSE`](LICENSE) for the
 | `/squad tp <member>` | Teleport to a member's current location | - |
 | `/squad setrally` | Set the rally point to your current location | Leader |
 | `/squad rally` | Teleport to the rally point | - |
+| `/squad beacon` | Teleport to the respawn beacon (same cooldown/cost as regular TP) | - |
 | `/squad admin` | Show current feature switches and the revive cast time | OP (level 2+) |
 | `/squad admin enable\|disable <feature>` | Toggle a feature server-wide | OP (level 2+) |
 | `/squad admin revivetime <seconds>` | Change the revive cast time at runtime (no restart needed, persisted to the world) | OP (level 2+) |
@@ -43,8 +44,10 @@ GNU General Public License v3.0 (GPL-3.0-only). See [`LICENSE`](LICENSE) for the
 ### Admin feature switches
 
 `/squad admin disable <feature>` lets you turn individual features off server-wide at runtime (persisted to world data, survives restarts).
-Available features: `create` (squad creation) / `invite` (invites) / `join` (join requests) / `tp` (member teleport) / `rally` (rally point) / `respawn` (respawn chooser) / `positions` (position sharing / map display) / `dummy` (test dummy block).
+Available features: `create` (squad creation) / `invite` (invites) / `join` (join requests) / `tp` (member teleport) / `rally` (rally point - only the anytime `/squad setrally`/`/squad rally`) / `beacon` (beacon placement and the anytime `/squad beacon`) / `respawn` (**all respawn-time teleporting**: the respawn-chooser screen, automatic rally respawn via `rallyRespawnEnabled`, and `/squad respawn rally|member|beacon`) / `positions` (position sharing / map display) / `dummy` (test dummy block).
 All checks happen on the server at the point of execution, so there is no way to bypass them via the GUI or chat buttons. Disabling `positions` immediately clears client-side position displays too.
+
+**Respawn-time teleporting and everyday teleporting toggle independently**: disabling `respawn` still leaves `/squad rally` and `/squad beacon` (everyday travel) working, and disabling `rally`/`beacon` has no effect on respawning at the rally point or beacon from the respawn chooser (`tp`, member teleport, was already independent from the respawn flow).
 
 The revive cast time (default 5 seconds, `reviveCastSeconds`) can be **changed at runtime without a server restart** via `/squad admin revivetime <1-60>`, and the value is persisted to world data (`/squad admin revivetime reset` restores the config default).
 
@@ -72,6 +75,17 @@ A "stand-in for a player" block for testing squad features solo (in the "Functio
 - Breaking the block automatically removes it from the squad; while its chunk is unloaded it counts as "offline"
 - A dummy can never be leader (`/squad promote` is rejected and it's excluded from automatic leadership succession; if only dummies remain after the leader leaves, the squad disbands)
 
+## Respawn Beacon
+
+Right-clicking the "Respawn Beacon" item (Functional Blocks creative tab) places a dedicated 1-HP entity. It acts as a **third respawn destination** for the squad, alongside the rally point and members.
+
+- Any squad member can place one. At most one active beacon per squad at a time (placing a new one removes the old one)
+- Has a limited number of uses (default 4); each use notifies the squad of the remaining count, and it's removed once depleted
+- **Fixed at 1 HP**. Immune to damage from squad members and players on the same scoreboard team, but **destroyed by a single hit from a hostile mob or a player on another team** - a forward spawn point with real risk to defend
+- Teleportable via both `/squad beacon` (anytime, same cooldown/cost as `/squad tp`) and `/squad respawn beacon` (free, only inside the post-death respawn-choice window)
+- Shown in the squad GUI, the respawn-chooser screen (with a map marker), and as a JourneyMap waypoint
+- Can be disabled server-wide with `/squad admin disable beacon`. The use count is set via `beaconUses` (default 4)
+
 ## Revive (Downed) System
 
 When a squad member takes lethal damage, instead of dying they enter a **downed state** (health pinned at 1, heavily slowed, "DOWNED" shown on screen).
@@ -87,7 +101,7 @@ When a squad member takes lethal damage, instead of dying they enter a **downed 
 - Teleporting is disabled while downed. Logging out while downed counts as an immediate death (anti combat-logging)
 - Can be disabled server-wide with `/squad admin disable revive`
 
-Config (`revive` section): `downedTimeoutSeconds` (30) / `reviveCastSeconds` (5, overridable at runtime via `/squad admin revivetime`) / `reviveHealPercent` (30) / `reviveInvulnSeconds` (3) / `allowNonSquadRevive` (false = only squadmates can revive) / `approachAlertEnabled` (true, server config) / `approachAlertRadius` (24, server config)
+Config (`revive` section): `downedTimeoutSeconds` (30) / `reviveCastSeconds` (2.5, fractional seconds allowed, overridable at runtime via `/squad admin revivetime`) / `reviveHealPercent` (30) / `reviveInvulnSeconds` (3) / `allowNonSquadRevive` (false = only squadmates can revive) / `approachAlertEnabled` (true, server config) / `approachAlertRadius` (24, server config) / `giveUpHoldTicks` (60 = 3s, how long the give-up key must be held while downed; 20 ticks = 1 second. Kept close to the revive cast time (default 5s) so giving up isn't a strictly faster escape hatch than waiting to be revived)
 
 The **bell sound** alone is a personal preference stored in a client-side config (`config/squadtp-client.toml`, `bellSoundEnabled`), toggleable anytime via the GUI's [ON]/[OFF] button (independent of any server or world).
 
@@ -104,6 +118,7 @@ The **bell sound** alone is a personal preference stored in a client-side config
 - `teleport.respawnChoiceEnabled` (default true) — shows a "choose your respawn point" screen after a death respawn (rally point / near an online member / stay here)
 - `teleport.respawnChoiceWindowSeconds` (default 60) — how long the choice stays valid; the server only allows `/squad respawn` right after a respawn, so it can't be abused as a regular teleport
 - `teleport.spawnDangerRadius` (default 4, 0 disables) — blocks respawn-chooser spawning if a **hostile mob or a player from another team** is within this radius of the destination
+- `beacon.beaconUses` (default 4) — number of uses per respawn beacon
 - `sync.posUpdateIntervalTicks` (default 20) — interval between position sync broadcasts
 
 ## Design Notes
