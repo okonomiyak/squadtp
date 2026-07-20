@@ -1,0 +1,31 @@
+# gradle
+.gradle/
+build/
+out/
+
+# eclipse
+bin/
+*.launch
+
+# idea
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# vscode
+.vscode/
+
+# macos
+.DS_Store
+
+# vim
+*.swp
+
+# dev run directories (Minecraft worlds, logs, downloaded mod jars, configs)
+/run/
+/run2/
+/run-server/
+
+# other
+logs/

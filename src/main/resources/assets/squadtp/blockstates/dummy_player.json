@@ -1,0 +1,5 @@
+{
+  "variants": {
+    "": { "model": "squadtp:block/dummy_player" }
+  }
+}

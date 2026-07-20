@@ -1,0 +1,96 @@
+plugins {
+    id 'java-library'
+    id 'idea'
+    id 'net.neoforged.moddev.legacyforge' version '2.0.141'
+}
+
+version = mod_version
+group = mod_group_id
+
+base {
+    archivesName = mod_id
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+legacyForge {
+    version = project.forge_version
+
+    parchment {
+        mappingsVersion = project.parchment_mappings_version
+        minecraftVersion = project.parchment_minecraft_version
+    }
+
+    runs {
+        client {
+            client()
+            programArguments.addAll '--username', 'Dev1'
+        }
+
+        // Second client for two-player testing (separate game dir + username).
+        client2 {
+            client()
+            gameDirectory = file('run2')
+            programArguments.addAll '--username', 'Dev2'
+        }
+
+        server {
+            server()
+            programArgument '--nogui'
+            gameDirectory = file('run-server')
+        }
+    }
+
+    mods {
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+        }
+    }
+}
+
+repositories {
+    // JourneyMap API (v1.x for MC 1.20.x)
+    maven {
+        name = 'JourneyMap'
+        url = 'https://jm.gserv.me/repository/maven-public/'
+    }
+    // Full JourneyMap mod for in-dev runtime testing
+    maven {
+        name = 'CurseMaven'
+        url = 'https://cursemaven.com'
+        content { includeGroup 'curse.maven' }
+    }
+    // Kotlin for Forge - SuperbWarfare (Kotlin-based) needs this language provider present at runtime
+    maven {
+        name = 'KotlinForForge'
+        url = 'https://thedarkcolour.github.io/KotlinForForge/'
+    }
+}
+
+dependencies {
+    // Compile-time only soft dependency: never shipped, never required at runtime.
+    compileOnly "info.journeymap:journeymap-api:${journeymap_api_version}"
+
+    // JourneyMap 1.20.1-5.10.3-forge, remapped SRG->named for the dev runtime only.
+    // Production jars must NOT go into run/mods: their mixins fail against named MC classes.
+    modRuntimeOnly 'curse.maven:journeymap-32274:5789363'
+
+    // TACZ (gun mod) API - compile-time only soft dependency, never shipped or required.
+    // modCompileOnly (not plain compileOnly) because TACZ ships as a single obfuscated jar
+    // and needs the same SRG->named remap CurseMaven/MDG legacy provides for JourneyMap above.
+    modCompileOnly 'curse.maven:timeless-and-classics-zero-1028108:8141310'
+    // Full TACZ mod for in-dev runtime testing only; do NOT place this jar in run/mods directly.
+    modRuntimeOnly 'curse.maven:timeless-and-classics-zero-1028108:8141310'
+
+    // SuperbWarfare (gun mod) - the revive guard has no compile-time dependency on it at all
+    // (it only checks the vanilla Projectile type + the "superbwarfare" entity namespace), so
+    // only a dev-runtime copy is needed here, for testing. Do NOT place this jar in run/mods directly.
+    modRuntimeOnly 'curse.maven:superb-warfare-1218165:8104849'
+    // SuperbWarfare is written in Kotlin and needs this language provider (4.x line = MC 1.20.1) to load.
+    modRuntimeOnly 'thedarkcolour:kotlinforforge:4.12.0'
+    // SuperbWarfare's own mandatory dependencies (dev-runtime only, for testing).
+    modRuntimeOnly 'curse.maven:geckolib-388172:8285794'
+    modRuntimeOnly 'curse.maven:curios-309927:6418456'
+}
+
+tasks.register('printCp') { def cp = sourceSets.main.compileClasspath; doLast { cp.each { println it } } }
