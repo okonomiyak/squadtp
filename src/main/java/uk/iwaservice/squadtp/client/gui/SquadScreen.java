@@ -68,6 +68,8 @@ public class SquadScreen extends Screen {
     private final List<Face> faces = new ArrayList<>();
     private final List<Placement> pending = new ArrayList<>();
     private final List<Tab> tabs = new ArrayList<>();
+    /** Rendered manually, outside the content scissor - see render()/addTabBarWidgets(). */
+    private final List<Button> tabButtons = new ArrayList<>();
 
     private int panelWidth = 360;
     private int panelLeft;
@@ -247,8 +249,16 @@ public class SquadScreen extends Screen {
         }
     }
 
-    /** Tab buttons are fixed chrome (like the header): rebuilt every reflow, never affected by scrollOffset. */
+    /**
+     * Tab buttons are fixed chrome (like the header): rebuilt every reflow,
+     * never affected by scrollOffset. Added via addWidget (not
+     * addRenderableWidget) so they stay clickable but are NOT auto-rendered
+     * by super.render() - they sit above viewportTop, so if they were drawn
+     * inside the content scissor block in render() they'd be clipped away.
+     * render() draws them manually, before the scissor is enabled.
+     */
     private void addTabBarWidgets() {
+        tabButtons.clear();
         if (tabs.isEmpty()) {
             return;
         }
@@ -260,7 +270,8 @@ public class SquadScreen extends Screen {
             Button b = Button.builder(Component.translatable(tab.key), btn -> selectTab(captured))
                     .bounds(x, barY, tabWidth, TAB_BAR_H - 1).build();
             b.active = tab != selectedTab;
-            addRenderableWidget(b);
+            addWidget(b);
+            tabButtons.add(b);
             x += tabWidth;
         }
     }
@@ -580,6 +591,12 @@ public class SquadScreen extends Screen {
         graphics.drawString(this.font, this.title, l + PAD, t + 8, COLOR_TEXT);
         int rightWidth = this.font.width(headerRight);
         graphics.drawString(this.font, headerRight, r - PAD - rightWidth, t + 8, COLOR_TEXT_DIM);
+
+        // Tab buttons sit above viewportTop (fixed chrome), so they must render before
+        // the scissor below is enabled - otherwise the scissor clips them away entirely.
+        for (Button tabButton : tabButtons) {
+            tabButton.render(graphics, mouseX, mouseY, partialTick);
+        }
 
         graphics.enableScissor(l, viewportTop, r, viewportBottom);
         for (Rect rect : rects) {
