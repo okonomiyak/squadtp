@@ -72,6 +72,9 @@ public final class SquadCommand {
                 .then(Commands.literal("reject")
                         .then(Commands.argument("player", StringArgumentType.word())
                                 .suggests(JOIN_REQUEST_NAMES).executes(ctx -> reject(ctx))))
+                .then(Commands.literal("setjoin")
+                        .then(Commands.literal("open").executes(ctx -> setJoinPolicy(ctx, true)))
+                        .then(Commands.literal("invite").executes(ctx -> setJoinPolicy(ctx, false))))
                 .then(Commands.literal("leave").executes(ctx -> leave(ctx)))
                 .then(Commands.literal("kick")
                         .then(Commands.argument("member", StringArgumentType.word())
@@ -475,9 +478,17 @@ public final class SquadCommand {
             return fail(ctx, "squadtp.msg.team_mismatch", squad.getMemberName(squad.getLeader()));
         }
 
+        String applicantName = applicant.getGameProfile().getName();
+
+        // Open-join squads admit immediately; invite-only squads still require leader approval.
+        // finalizeJoin already messages the applicant directly, so no extra sendSuccess here.
+        if (squad.isOpenJoin()) {
+            finalizeJoin(server, manager, squad, applicant.getUUID(), applicantName);
+            return 1;
+        }
+
         manager.requestJoin(server, squad, applicant);
 
-        String applicantName = applicant.getGameProfile().getName();
         ServerPlayer leader = server.getPlayerList().getPlayer(squad.getLeader());
         if (leader != null) {
             MutableComponent notice = Component.translatable("squadtp.msg.requested_join", applicantName)
@@ -489,6 +500,25 @@ public final class SquadCommand {
         }
         ctx.getSource().sendSuccess(() -> Component.translatable("squadtp.msg.request_sent",
                 squad.getMemberName(squad.getLeader())), false);
+        return 1;
+    }
+
+    /** Leader-only: switches the squad's join policy between open (auto-admit) and invite-only (needs approval). */
+    private static int setJoinPolicy(CommandContext<CommandSourceStack> ctx, boolean open) throws CommandSyntaxException {
+        ServerPlayer leader = ctx.getSource().getPlayerOrException();
+        MinecraftServer server = ctx.getSource().getServer();
+        SquadManager manager = manager(ctx);
+
+        Squad squad = manager.getSquadOf(leader.getUUID());
+        if (squad == null) {
+            return fail(ctx, "squadtp.msg.not_in_squad");
+        }
+        if (!squad.isLeader(leader.getUUID())) {
+            return fail(ctx, "squadtp.msg.not_leader");
+        }
+        manager.setOpenJoin(server, squad, open);
+        ctx.getSource().sendSuccess(() -> Component.translatable(
+                open ? "squadtp.msg.join_policy_open" : "squadtp.msg.join_policy_invite"), true);
         return 1;
     }
 
@@ -524,22 +554,27 @@ public final class SquadCommand {
             return fail(ctx, "squadtp.msg.team_mismatch", name);
         }
 
-        // Switch squads: leave the current one (if any) only after every check above has passed.
-        if (oldSquad != null) {
-            UUID newOldLeader = manager.removeMember(server, oldSquad, applicant);
-            broadcast(server, oldSquad, "squadtp.msg.member_left", name);
+        finalizeJoin(server, manager, squad, applicant, name);
+        return 1;
+    }
+
+    /** Finalizes a join after all validation has passed: switches squads if necessary, then joins. */
+    private static void finalizeJoin(MinecraftServer server, SquadManager manager, Squad squad,
+                                     UUID applicantId, String applicantName) {
+        Squad oldSquad = manager.getSquadOf(applicantId);
+        if (oldSquad != null && !oldSquad.getId().equals(squad.getId())) {
+            UUID newOldLeader = manager.removeMember(server, oldSquad, applicantId);
+            broadcast(server, oldSquad, "squadtp.msg.member_left", applicantName);
             if (newOldLeader != null) {
                 broadcast(server, oldSquad, "squadtp.msg.leader_now", oldSquad.getMemberName(newOldLeader));
             }
         }
-
-        broadcast(server, squad, "squadtp.msg.member_joined", name);
-        manager.joinMember(server, squad, applicant, name);
-        ServerPlayer joined = server.getPlayerList().getPlayer(applicant);
+        broadcast(server, squad, "squadtp.msg.member_joined", applicantName);
+        manager.joinMember(server, squad, applicantId, applicantName);
+        ServerPlayer joined = server.getPlayerList().getPlayer(applicantId);
         if (joined != null) {
             joined.sendSystemMessage(Component.translatable("squadtp.msg.joined"));
         }
-        return 1;
     }
 
     private static int reject(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {

@@ -47,7 +47,6 @@ public class SquadScreen extends Screen {
 
     private enum Tab {
         MAIN("squadtp.gui.tab_main"),
-        LOCATIONS("squadtp.gui.tab_locations"),
         RECRUIT("squadtp.gui.tab_recruit"),
         SETTINGS("squadtp.gui.tab_settings");
 
@@ -195,9 +194,6 @@ public class SquadScreen extends Screen {
         boolean inSquad = SquadClientData.isInSquad();
         tabs.clear();
         tabs.add(Tab.MAIN);
-        if (inSquad) {
-            tabs.add(Tab.LOCATIONS);
-        }
         tabs.add(Tab.RECRUIT);
         tabs.add(Tab.SETTINGS);
         if (!tabs.contains(selectedTab)) {
@@ -209,11 +205,12 @@ public class SquadScreen extends Screen {
             case MAIN -> {
                 if (inSquad) {
                     buildMembersTab();
+                    buildLocationsTab();
+                    buildLeaveDisbandRow();
                 } else {
                     buildNoSquadMainTab();
                 }
             }
-            case LOCATIONS -> buildLocationsTab();
             case RECRUIT -> buildRecruitTab(inSquad);
             case SETTINGS -> buildSettingsTab();
         }
@@ -300,6 +297,17 @@ public class SquadScreen extends Screen {
                     rebuild();
                 });
         cursor += ROW_H;
+
+        UUID self = minecraft.player.getUUID();
+        if (SquadClientData.isInSquad() && self.equals(SquadClientData.getLeader())) {
+            boolean openJoin = SquadClientData.isOpenJoin();
+            text(PAD, cursor + 6, Component.translatable("squadtp.gui.join_policy"), COLOR_TEXT);
+            button(panelWidth - PAD - 90, cursor, 90,
+                    Component.translatable(openJoin ? "squadtp.gui.join_policy_open" : "squadtp.gui.join_policy_invite"),
+                    Component.translatable("squadtp.gui.tooltip.join_policy_toggle"),
+                    () -> command("squad setjoin " + (openJoin ? "invite" : "open")));
+            cursor += ROW_H;
+        }
     }
 
     /** Main tab when not in a squad: status hint, invite response, create button. */
@@ -412,7 +420,10 @@ public class SquadScreen extends Screen {
             }
             cursor += ROW_H;
         }
+    }
 
+    private void buildLeaveDisbandRow() {
+        boolean isLeader = minecraft.player.getUUID().equals(SquadClientData.getLeader());
         cursor += 4;
         button(PAD, cursor, 76, Component.translatable("squadtp.gui.leave"), null,
                 () -> command("squad leave"));
@@ -423,7 +434,7 @@ public class SquadScreen extends Screen {
         cursor += 24;
     }
 
-    /** Locations tab: rally point and respawn beacon (only reachable while in a squad). */
+    /** Rally point and respawn beacon (only reachable while in a squad). */
     private void buildLocationsTab() {
         boolean isLeader = minecraft.player.getUUID().equals(SquadClientData.getLeader());
 

@@ -25,6 +25,7 @@ public final class Config {
     public static final ForgeConfigSpec.IntValue POS_UPDATE_INTERVAL_TICKS;
     public static final ForgeConfigSpec.IntValue INVITE_EXPIRY_SECONDS;
     public static final ForgeConfigSpec.BooleanValue REQUIRE_SAME_TEAM;
+    public static final ForgeConfigSpec.BooleanValue SQUAD_OPEN_JOIN_DEFAULT;
     public static final ForgeConfigSpec.BooleanValue ALLOW_CROSS_DIMENSION_TP;
     public static final ForgeConfigSpec.IntValue COMBAT_BLOCK_SECONDS;
     public static final ForgeConfigSpec.BooleanValue RALLY_RESPAWN_ENABLED;
@@ -46,6 +47,11 @@ public final class Config {
                 .comment("If vanilla scoreboard teams are in use, only players on the same team",
                         "as the squad leader can join the squad (no-team players only with no-team leaders).")
                 .define("requireSameTeam", true);
+        SQUAD_OPEN_JOIN_DEFAULT = b
+                .comment("Default join policy for newly created squads. If true, /squad join admits the",
+                        "applicant immediately; if false, the leader must approve each request.",
+                        "The leader can change this per-squad at any time (GUI Settings tab or /squad setjoin).")
+                .define("squadOpenJoinDefault", true);
         b.pop();
 
         b.push("teleport");

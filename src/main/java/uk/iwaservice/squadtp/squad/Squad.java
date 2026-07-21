@@ -45,10 +45,14 @@ public class Squad {
     private BlockPos beaconPos;
     private int beaconUsesRemaining;
 
-    public Squad(UUID id, UUID leader, String leaderName) {
+    /** If true, /squad join immediately admits the applicant instead of requiring leader approval. */
+    private boolean openJoin;
+
+    public Squad(UUID id, UUID leader, String leaderName, boolean openJoin) {
         this.id = id;
         this.leader = leader;
         this.members.put(leader, leaderName);
+        this.openJoin = openJoin;
     }
 
     private Squad(UUID id) {
@@ -208,6 +212,16 @@ public class Squad {
         this.rallyPos = pos.immutable();
     }
 
+    // --- join policy ---
+
+    public boolean isOpenJoin() {
+        return openJoin;
+    }
+
+    void setOpenJoin(boolean openJoin) {
+        this.openJoin = openJoin;
+    }
+
     // --- respawn beacon ---
 
     @Nullable
@@ -258,6 +272,7 @@ public class Squad {
         CompoundTag tag = new CompoundTag();
         tag.putUUID("Id", id);
         tag.putUUID("Leader", leader);
+        tag.putBoolean("OpenJoin", openJoin);
 
         ListTag memberList = new ListTag();
         for (Map.Entry<UUID, String> e : members.entrySet()) {
@@ -304,6 +319,8 @@ public class Squad {
     public static Squad load(CompoundTag tag) {
         Squad squad = new Squad(tag.getUUID("Id"));
         squad.leader = tag.getUUID("Leader");
+        // Older saves predate this field; default matches the pre-feature behavior (approval required).
+        squad.openJoin = tag.contains("OpenJoin") && tag.getBoolean("OpenJoin");
 
         ListTag memberList = tag.getList("Members", Tag.TAG_COMPOUND);
         for (int i = 0; i < memberList.size(); i++) {

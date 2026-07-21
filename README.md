@@ -27,6 +27,7 @@ GNU General Public License v3.0 (GPL-3.0-only). See [`LICENSE`](LICENSE) for the
 | `/squad accept` / `/squad deny` | Respond to an invite | Invitee |
 | `/squad join <player>` | Request to join that player's squad | Not in a squad |
 | `/squad approve <name>` / `/squad reject <name>` | Respond to a join request | Leader |
+| `/squad setjoin open\|invite` | Switch the squad between free-join (auto-admit) and invite-only (needs approval) | Leader |
 | `/squad leave` | Leave (leadership auto-transfers to the longest-standing member if the leader leaves) | - |
 | `/squad kick <member>` | Kick (offline members can be targeted by name) | Leader |
 | `/squad promote <member>` | Transfer leadership | Leader |
@@ -55,14 +56,15 @@ The revive cast time (default 5 seconds, `reviveCastSeconds`) can be **changed a
 
 Press **K** (rebindable under the "Squad Teleport" key category) to open the squad screen. If content doesn't fit, scroll with the mouse wheel (a scrollbar appears on the right edge).
 
-The screen is split into 4 tabs (the "Locations" tab is hidden while not in a squad):
+The screen is split into 3 tabs:
 
-- **Squad**: while not in a squad, a Create Squad button and any pending invite ("X invited you" + Accept/Decline). While in one, the member list (leader ★, coordinates, online status, auto-refreshing every second), a [TP] button per member, [Kick]/[Promote] for the leader, and [Leave]/[Disband]
-- **Locations** (in a squad only): the rally point display / [Go] / [Set Here], and the respawn beacon display / [Go] / remaining uses
+- **Squad**: while not in a squad, a Create Squad button and any pending invite ("X invited you" + Accept/Decline). While in one: the member list (leader ★, coordinates, online status, auto-refreshing every second) with a [TP] button per member and [Kick]/[Promote] for the leader, followed by the rally point display / [Go] / [Set Here] and the respawn beacon display / [Go] / remaining uses, then [Leave]/[Disband] at the bottom (all teleport-related actions live in one tab)
 - **Recruit**: the leader sees a "Join Requests" list ([Approve]/[Reject]) and an "Invitable Players" list (from the online tab list) with an [Invite] button. Anyone can request to join another online player's squad from the "Request to Join" section
-- **Settings**: the approach-alert bell sound ON/OFF toggle
+- **Settings**: the approach-alert bell sound ON/OFF toggle, and (leader only, while in a squad) the join-policy toggle (OPEN/INVITE)
 
-**There are two ways to join a squad**: ① the leader invites you and you accept, ② you request to join and the leader approves. Both are available from the GUI and from clickable chat buttons.
+**There are two ways to join a squad**: ① the leader invites you and you accept, ② you request to join and the leader approves (or, for a free-join squad, is admitted immediately). Both are available from the GUI and from clickable chat buttons.
+
+**Join policy**: each squad is either **free-join** (`/squad join` admits the applicant immediately, no leader action needed) or **invite-only** (the leader must `/squad approve`/`reject` each request). New squads default to free-join (`squadOpenJoinDefault` in the config, default `true`); the leader can switch at any time via `/squad setjoin open|invite` or the Settings tab's toggle button. Existing squads from before this feature keep invite-only behavior until the leader switches them.
 
 **Switching squads**: both invites and join requests work **even if you are already in a different squad**. The moment you accept/get approved, you automatically leave your old squad before joining the new one (all validation - squad-full checks, team restrictions, etc. - runs *before* the switch, so a failed join never leaves you squadless). Your old squad is notified ("X left the squad" / "X is now the leader"). The GUI's "Request to Join" section stays visible even while you're in a squad (your own squad's members are excluded from the list).
 

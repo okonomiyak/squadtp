@@ -76,7 +76,8 @@ public class SquadManager extends SavedData {
     // --- membership operations (permission checks live here) ---
 
     public Squad create(ServerPlayer creator) {
-        Squad squad = new Squad(UUID.randomUUID(), creator.getUUID(), creator.getGameProfile().getName());
+        Squad squad = new Squad(UUID.randomUUID(), creator.getUUID(), creator.getGameProfile().getName(),
+                Config.SQUAD_OPEN_JOIN_DEFAULT.get());
         squads.put(squad.getId(), squad);
         playerSquad.put(creator.getUUID(), squad.getId());
         setDirty();
@@ -231,6 +232,12 @@ public class SquadManager extends SavedData {
 
     public void setRally(MinecraftServer server, Squad squad, ResourceKey<Level> dimension, BlockPos pos) {
         squad.setRally(dimension, pos);
+        setDirty();
+        sync(server, squad);
+    }
+
+    public void setOpenJoin(MinecraftServer server, Squad squad, boolean openJoin) {
+        squad.setOpenJoin(openJoin);
         setDirty();
         sync(server, squad);
     }

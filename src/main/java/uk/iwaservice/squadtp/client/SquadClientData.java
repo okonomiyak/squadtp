@@ -38,6 +38,7 @@ public final class SquadClientData {
     @Nullable
     private static BlockPos beaconPos;
     private static int beaconUsesRemaining;
+    private static boolean openJoin;
     /** Incremented on every data change; lets the GUI detect updates cheaply. */
     private static int revision;
 
@@ -50,7 +51,7 @@ public final class SquadClientData {
                                               @Nullable ResourceLocation newRallyDim, @Nullable BlockPos newRallyPos,
                                               java.util.List<String> newJoinRequests, @Nullable String newInvitedBy,
                                               @Nullable ResourceLocation newBeaconDim, @Nullable BlockPos newBeaconPos,
-                                              int newBeaconUsesRemaining) {
+                                              int newBeaconUsesRemaining, boolean newOpenJoin) {
         inSquad = nowInSquad;
         leader = newLeader;
         members.clear();
@@ -63,6 +64,7 @@ public final class SquadClientData {
         beaconDimension = newBeaconDim;
         beaconPos = newBeaconPos;
         beaconUsesRemaining = newBeaconUsesRemaining;
+        openJoin = newOpenJoin;
         revision++;
     }
 
@@ -88,6 +90,7 @@ public final class SquadClientData {
         beaconDimension = null;
         beaconPos = null;
         beaconUsesRemaining = 0;
+        openJoin = false;
         revision++;
     }
 
@@ -143,6 +146,10 @@ public final class SquadClientData {
 
     public static synchronized int getBeaconUsesRemaining() {
         return beaconUsesRemaining;
+    }
+
+    public static synchronized boolean isOpenJoin() {
+        return openJoin;
     }
 
     private SquadClientData() {}
