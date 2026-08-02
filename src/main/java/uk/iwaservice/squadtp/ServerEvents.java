@@ -4,12 +4,12 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.event.server.ServerStoppedEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.server.ServerLifecycleHooks;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import uk.iwaservice.squadtp.block.DummyRegistry;
 import uk.iwaservice.squadtp.command.SquadCommand;
 import uk.iwaservice.squadtp.network.NetworkHandler;
@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/** Forge-bus event handlers: commands, periodic position sync, login sync, rally respawn. */
+/** NeoForge game-bus event handlers: commands, periodic position sync, login sync, rally respawn. */
 public final class ServerEvents {
 
     private static int tickCounter;
@@ -38,10 +38,7 @@ public final class ServerEvents {
     }
 
     @SubscribeEvent
-    public static void onServerTick(TickEvent.ServerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) {
-            return;
-        }
+    public static void onServerTick(ServerTickEvent.Post event) {
         MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
         if (server == null) {
             return;
@@ -112,15 +109,15 @@ public final class ServerEvents {
     }
 
     @SubscribeEvent
-    public static void onLivingDamage(net.minecraftforge.event.entity.living.LivingDamageEvent event) {
-        if (event.getAmount() > 0 && event.getEntity() instanceof ServerPlayer player) {
+    public static void onLivingDamage(net.neoforged.neoforge.event.entity.living.LivingDamageEvent.Post event) {
+        if (event.getNewDamage() > 0 && event.getEntity() instanceof ServerPlayer player) {
             SquadManager.get(player.server).markDamaged(player.getUUID());
         }
     }
 
     /** Lethal hit on a squad member -> downed state instead of death. */
     @SubscribeEvent
-    public static void onLivingDeath(net.minecraftforge.event.entity.living.LivingDeathEvent event) {
+    public static void onLivingDeath(net.neoforged.neoforge.event.entity.living.LivingDeathEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) {
             return;
         }
@@ -143,7 +140,7 @@ public final class ServerEvents {
 
     /** No jumping while downed (the event is not cancelable, so zero the upward motion). */
     @SubscribeEvent
-    public static void onLivingJump(net.minecraftforge.event.entity.living.LivingEvent.LivingJumpEvent event) {
+    public static void onLivingJump(net.neoforged.neoforge.event.entity.living.LivingEvent.LivingJumpEvent event) {
         if (event.getEntity() instanceof ServerPlayer player && ReviveSystem.isDowned(player.getUUID())) {
             var motion = player.getDeltaMovement();
             player.setDeltaMovement(motion.x, Math.min(0.0, motion.y), motion.z);
@@ -152,7 +149,7 @@ public final class ServerEvents {
 
     /** Health stays pinned at 1 while downed (except kill-type sources). */
     @SubscribeEvent
-    public static void onLivingHurt(net.minecraftforge.event.entity.living.LivingHurtEvent event) {
+    public static void onLivingHurt(net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent event) {
         if (event.getEntity() instanceof ServerPlayer player
                 && ReviveSystem.isDowned(player.getUUID())
                 && !event.getSource().is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY)) {
@@ -162,7 +159,7 @@ public final class ServerEvents {
 
     /** Right-click(-hold) on a downed player channels a revive. */
     @SubscribeEvent
-    public static void onEntityInteract(net.minecraftforge.event.entity.player.PlayerInteractEvent.EntityInteract event) {
+    public static void onEntityInteract(net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.EntityInteract event) {
         if (event.getLevel().isClientSide || event.getHand() != net.minecraft.world.InteractionHand.MAIN_HAND) {
             return;
         }
@@ -185,7 +182,7 @@ public final class ServerEvents {
 
     /** Downed players cannot attack (server-authoritative left-click block). */
     @SubscribeEvent
-    public static void onAttackEntity(net.minecraftforge.event.entity.player.AttackEntityEvent event) {
+    public static void onAttackEntity(net.neoforged.neoforge.event.entity.player.AttackEntityEvent event) {
         if (event.getEntity() instanceof ServerPlayer player && ReviveSystem.isDowned(player.getUUID())) {
             event.setCanceled(true);
         }
@@ -193,7 +190,7 @@ public final class ServerEvents {
 
     /** Downed players cannot break blocks. */
     @SubscribeEvent
-    public static void onLeftClickBlock(net.minecraftforge.event.entity.player.PlayerInteractEvent.LeftClickBlock event) {
+    public static void onLeftClickBlock(net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.LeftClickBlock event) {
         if (!event.getLevel().isClientSide && event.getEntity() instanceof ServerPlayer player
                 && ReviveSystem.isDowned(player.getUUID())) {
             event.setCanceled(true);
@@ -202,7 +199,7 @@ public final class ServerEvents {
 
     /** Downed players cannot use blocks (chests, buttons, ...). */
     @SubscribeEvent
-    public static void onRightClickBlock(net.minecraftforge.event.entity.player.PlayerInteractEvent.RightClickBlock event) {
+    public static void onRightClickBlock(net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClickBlock event) {
         if (!event.getLevel().isClientSide && event.getEntity() instanceof ServerPlayer player
                 && ReviveSystem.isDowned(player.getUUID())) {
             event.setCanceled(true);
@@ -211,7 +208,7 @@ public final class ServerEvents {
 
     /** Downed players cannot use items (food, pearls, ...). */
     @SubscribeEvent
-    public static void onRightClickItem(net.minecraftforge.event.entity.player.PlayerInteractEvent.RightClickItem event) {
+    public static void onRightClickItem(net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClickItem event) {
         if (!event.getLevel().isClientSide && event.getEntity() instanceof ServerPlayer player
                 && ReviveSystem.isDowned(player.getUUID())) {
             event.setCanceled(true);
@@ -220,7 +217,7 @@ public final class ServerEvents {
 
     /** Downed players cannot drop items (the stack is returned to their inventory). */
     @SubscribeEvent
-    public static void onItemToss(net.minecraftforge.event.entity.item.ItemTossEvent event) {
+    public static void onItemToss(net.neoforged.neoforge.event.entity.item.ItemTossEvent event) {
         if (event.getPlayer() instanceof ServerPlayer player && ReviveSystem.isDowned(player.getUUID())) {
             event.setCanceled(true);
             player.getInventory().add(event.getEntity().getItem());
@@ -229,7 +226,7 @@ public final class ServerEvents {
 
     /** Downed players cannot swap hands. */
     @SubscribeEvent
-    public static void onSwapHands(net.minecraftforge.event.entity.living.LivingSwapItemsEvent.Hands event) {
+    public static void onSwapHands(net.neoforged.neoforge.event.entity.living.LivingSwapItemsEvent.Hands event) {
         if (event.getEntity() instanceof ServerPlayer player && ReviveSystem.isDowned(player.getUUID())) {
             event.setCanceled(true);
         }

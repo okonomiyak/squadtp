@@ -64,7 +64,7 @@ public final class ReviveSystem {
         player.removeAllEffects();
         player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, data.remainingTicks + 40, 5, false, false));
         // Visible-to-everyone downed cues: prone pose + glowing outline.
-        player.setForcedPose(net.minecraft.world.entity.Pose.SWIMMING);
+        player.setForcedPose(net.minecraft.world.entity.Pose.SLEEPING);
         player.addEffect(new MobEffectInstance(MobEffects.GLOWING, data.remainingTicks + 40, 0, false, false));
         NetworkHandler.sendDownedState(player, true, data.remainingTicks);
         broadcastSquad(player, "squadtp.msg.downed_broadcast", player.getGameProfile().getName());

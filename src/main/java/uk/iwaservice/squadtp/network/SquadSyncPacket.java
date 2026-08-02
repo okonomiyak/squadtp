@@ -2,11 +2,9 @@ package uk.iwaservice.squadtp.network;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
-import uk.iwaservice.squadtp.client.ClientPacketHandler;
 import uk.iwaservice.squadtp.squad.Squad;
 
 import javax.annotation.Nullable;
@@ -32,7 +30,18 @@ public record SquadSyncPacket(boolean inSquad,
                               @Nullable ResourceLocation beaconDim,
                               @Nullable BlockPos beaconPos,
                               int beaconUsesRemaining,
-                              boolean openJoin) {
+                              boolean openJoin) implements CustomPacketPayload {
+
+    public static final Type<SquadSyncPacket> TYPE =
+            new Type<>(ResourceLocation.fromNamespaceAndPath(uk.iwaservice.squadtp.SquadTp.MODID, "squad_sync"));
+
+    public static final StreamCodec<FriendlyByteBuf, SquadSyncPacket> STREAM_CODEC =
+            StreamCodec.of((buf, msg) -> encode(msg, buf), SquadSyncPacket::decode);
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
 
     public record Entry(UUID uuid, String name) {}
 
@@ -125,10 +134,5 @@ public record SquadSyncPacket(boolean inSquad,
         boolean openJoin = buf.readBoolean();
         return new SquadSyncPacket(true, squadId, leader, members, rallyDim, rallyPos, joinRequests, null,
                 beaconDim, beaconPos, beaconUsesRemaining, openJoin);
-    }
-
-    public static void handle(SquadSyncPacket msg, java.util.function.Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().setPacketHandled(true);
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ClientPacketHandler.handleSync(msg));
     }
 }

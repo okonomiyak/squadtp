@@ -2,16 +2,17 @@ package uk.iwaservice.squadtp.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
-import net.minecraftforge.client.settings.KeyConflictContext;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.minecraft.resources.ResourceLocation;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.client.settings.KeyConflictContext;
 import org.lwjgl.glfw.GLFW;
 import uk.iwaservice.squadtp.SquadTp;
 
 /** Mod-bus client events: keybind registration. */
-@Mod.EventBusSubscriber(modid = SquadTp.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = SquadTp.MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
 public final class ClientModEvents {
 
     public static final KeyMapping OPEN_SQUAD_SCREEN = new KeyMapping(
@@ -35,12 +36,13 @@ public final class ClientModEvents {
     }
 
     @SubscribeEvent
-    public static void onRegisterGuiOverlays(net.minecraftforge.client.event.RegisterGuiOverlaysEvent event) {
-        event.registerAboveAll("downed", uk.iwaservice.squadtp.client.gui.DownedHudOverlay.INSTANCE);
+    public static void onRegisterGuiLayers(net.neoforged.neoforge.client.event.RegisterGuiLayersEvent event) {
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(SquadTp.MODID, "downed"),
+                uk.iwaservice.squadtp.client.gui.DownedHudOverlay.INSTANCE);
     }
 
     @SubscribeEvent
-    public static void onRegisterRenderers(net.minecraftforge.client.event.EntityRenderersEvent.RegisterRenderers event) {
+    public static void onRegisterRenderers(net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(uk.iwaservice.squadtp.ModRegistry.RESPAWN_BEACON.get(), RespawnBeaconRenderer::new);
     }
 

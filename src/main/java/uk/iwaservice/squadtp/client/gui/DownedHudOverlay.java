@@ -1,25 +1,27 @@
 package uk.iwaservice.squadtp.client.gui;
 
+import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.network.chat.Component;
-import net.minecraftforge.client.gui.overlay.ForgeGui;
-import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import uk.iwaservice.squadtp.client.ClientReviveData;
 
 /** HUD: "DOWNED" banner for the downed player and the revive channel gauge. */
-public class DownedHudOverlay implements IGuiOverlay {
+public class DownedHudOverlay implements LayeredDraw.Layer {
 
     public static final DownedHudOverlay INSTANCE = new DownedHudOverlay();
 
     @Override
-    public void render(ForgeGui gui, GuiGraphics graphics, float partialTick, int width, int height) {
+    public void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.options.hideGui) {
             return;
         }
         Font font = mc.font;
+        int width = graphics.guiWidth();
+        int height = graphics.guiHeight();
 
         int remaining = ClientReviveData.getDownedRemainingTicks();
         if (remaining >= 0) {

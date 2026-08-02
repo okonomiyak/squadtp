@@ -1,18 +1,17 @@
 package uk.iwaservice.squadtp.compat.journeymap;
 
-import journeymap.client.api.ClientPlugin;
-import journeymap.client.api.IClientAPI;
-import journeymap.client.api.IClientPlugin;
-import journeymap.client.api.event.ClientEvent;
+import journeymap.api.v2.client.IClientAPI;
+import journeymap.api.v2.client.IClientPlugin;
+import journeymap.api.v2.common.JourneyMapPlugin;
 import uk.iwaservice.squadtp.SquadTp;
 
 import javax.annotation.Nullable;
 
 /**
- * Discovered and instantiated by JourneyMap itself (via the {@link ClientPlugin}
+ * Discovered and instantiated by JourneyMap itself (via the {@link JourneyMapPlugin}
  * annotation), so this class never loads when JourneyMap is absent.
  */
-@ClientPlugin
+@JourneyMapPlugin(apiVersion = "2.0.0")
 public class SquadJmPlugin implements IClientPlugin {
 
     @Nullable
@@ -28,10 +27,6 @@ public class SquadJmPlugin implements IClientPlugin {
     @Override
     public String getModId() {
         return SquadTp.MODID;
-    }
-
-    @Override
-    public void onEvent(ClientEvent event) {
     }
 
     @Nullable

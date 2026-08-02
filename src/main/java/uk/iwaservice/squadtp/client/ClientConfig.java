@@ -1,6 +1,6 @@
 package uk.iwaservice.squadtp.client;
 
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 
 /**
  * Per-client preferences, stored in {@code config/squadtp-client.toml}
@@ -8,11 +8,11 @@ import net.minecraftforge.common.ForgeConfigSpec;
  */
 public final class ClientConfig {
 
-    public static final ForgeConfigSpec SPEC;
-    public static final ForgeConfigSpec.BooleanValue BELL_SOUND_ENABLED;
+    public static final ModConfigSpec SPEC;
+    public static final ModConfigSpec.BooleanValue BELL_SOUND_ENABLED;
 
     static {
-        ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
+        ModConfigSpec.Builder b = new ModConfigSpec.Builder();
         BELL_SOUND_ENABLED = b
                 .comment("Play a bell sound for the downed-approach alert. The action-bar message always shows regardless.")
                 .define("bellSoundEnabled", true);

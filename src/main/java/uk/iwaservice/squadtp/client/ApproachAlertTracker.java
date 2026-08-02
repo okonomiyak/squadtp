@@ -63,7 +63,7 @@ public final class ApproachAlertTracker {
         mc.player.displayClientMessage(
                 Component.translatable("squadtp.hud.approaching", name, (int) distance), true);
         if (ClientConfig.BELL_SOUND_ENABLED.get()) {
-            mc.player.playSound(SoundEvents.NOTE_BLOCK_BELL.get(), 1.0f, 1.2f);
+            mc.player.playSound(SoundEvents.NOTE_BLOCK_BELL.value(), 1.0f, 1.2f);
         }
     }
 

@@ -186,7 +186,7 @@ public class RespawnChoiceScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics);
+        renderBackground(graphics, mouseX, mouseY, partialTick);
 
         int l = panelLeft;
         int t = panelTop;
@@ -309,10 +309,10 @@ public class RespawnChoiceScreen extends Screen {
         if (minecraft != null && minecraft.getConnection() != null) {
             PlayerInfo info = minecraft.getConnection().getPlayerInfo(uuid);
             if (info != null) {
-                return info.getSkinLocation();
+                return info.getSkin().texture();
             }
         }
-        return DefaultPlayerSkin.getDefaultSkin(uuid);
+        return DefaultPlayerSkin.get(uuid).texture();
     }
 
     private static String shortDim(ResourceLocation dim) {

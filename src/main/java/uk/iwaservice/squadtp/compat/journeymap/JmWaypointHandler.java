@@ -1,8 +1,8 @@
 package uk.iwaservice.squadtp.compat.journeymap;
 
-import journeymap.client.api.IClientAPI;
-import journeymap.client.api.display.DisplayType;
-import journeymap.client.api.display.Waypoint;
+import journeymap.api.v2.client.IClientAPI;
+import journeymap.api.v2.common.waypoint.Waypoint;
+import journeymap.api.v2.common.waypoint.WaypointFactory;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
@@ -23,9 +23,9 @@ public final class JmWaypointHandler {
         if (api == null) {
             return;
         }
-        api.removeAll(SquadTp.MODID);
+        api.removeAllWaypoints(SquadTp.MODID);
 
-        if (!SquadClientData.isInSquad() || !api.playerAccepts(SquadTp.MODID, DisplayType.Waypoint)) {
+        if (!SquadClientData.isInSquad()) {
             return;
         }
 
@@ -46,33 +46,32 @@ public final class JmWaypointHandler {
             if (pos == null) {
                 continue; // offline or no position received yet
             }
-            show(api, waypoint("member_" + member, pos.name(), pos.dimension(), pos.pos(), color));
+            show(api, waypoint(pos.name(), pos.dimension(), pos.pos(), color));
         }
 
         ResourceLocation rallyDim = SquadClientData.getRallyDimension();
         BlockPos rallyPos = SquadClientData.getRallyPos();
         if (rallyDim != null && rallyPos != null) {
-            show(api, waypoint("rally", "Rally", rallyDim, rallyPos,
+            show(api, waypoint("Rally", rallyDim, rallyPos,
                     uk.iwaservice.squadtp.client.SquadColors.RALLY_COLOR));
         }
 
         if (SquadClientData.hasBeacon()) {
-            show(api, waypoint("beacon", "Beacon", SquadClientData.getBeaconDimension(), SquadClientData.getBeaconPos(),
+            show(api, waypoint("Beacon", SquadClientData.getBeaconDimension(), SquadClientData.getBeaconPos(),
                     uk.iwaservice.squadtp.client.SquadColors.BEACON_COLOR));
         }
     }
 
-    private static Waypoint waypoint(String id, String name, ResourceLocation dimension, BlockPos pos, int color) {
+    private static Waypoint waypoint(String name, ResourceLocation dimension, BlockPos pos, int color) {
         ResourceKey<Level> dimKey = ResourceKey.create(Registries.DIMENSION, dimension);
-        return new Waypoint(SquadTp.MODID, id, name, dimKey, pos)
-                .setColor(color)
-                .setPersistent(false)
-                .setEditable(false);
+        Waypoint waypoint = WaypointFactory.createWaypoint(SquadTp.MODID, pos, name, dimKey, false);
+        waypoint.setColor(color);
+        return waypoint;
     }
 
     private static void show(IClientAPI api, Waypoint waypoint) {
         try {
-            api.show(waypoint);
+            api.addWaypoint(SquadTp.MODID, waypoint);
         } catch (Exception e) {
             SquadTp.LOGGER.warn("Failed to show squad waypoint {}", waypoint.getName(), e);
         }

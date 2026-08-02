@@ -1,7 +1,7 @@
 package uk.iwaservice.squadtp.compat;
 
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.ModList;
+import net.neoforged.fml.ModList;
+import net.neoforged.neoforge.common.NeoForge;
 import uk.iwaservice.squadtp.SquadTp;
 
 /**
@@ -18,7 +18,7 @@ public final class TaczCompat {
             return;
         }
         try {
-            MinecraftForge.EVENT_BUS.register(new uk.iwaservice.squadtp.compat.tacz.TaczReviveGuard());
+            NeoForge.EVENT_BUS.register(new uk.iwaservice.squadtp.compat.tacz.TaczReviveGuard());
             SquadTp.LOGGER.info("TACZ integration initialized: guns are disabled while downed");
         } catch (Throwable t) {
             SquadTp.LOGGER.error("TACZ integration failed to initialize", t);

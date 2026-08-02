@@ -1,40 +1,40 @@
 package uk.iwaservice.squadtp;
 
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 
 public final class Config {
     public enum CostMode { NONE, XP, ITEM }
 
-    public static final ForgeConfigSpec SPEC;
+    public static final ModConfigSpec SPEC;
 
-    public static final ForgeConfigSpec.IntValue MAX_SQUAD_SIZE;
-    public static final ForgeConfigSpec.IntValue TP_COOLDOWN_SECONDS;
-    public static final ForgeConfigSpec.EnumValue<CostMode> TP_COST_MODE;
-    public static final ForgeConfigSpec.IntValue TP_COST_XP_LEVELS;
-    public static final ForgeConfigSpec.ConfigValue<String> TP_COST_ITEM;
-    public static final ForgeConfigSpec.IntValue TP_COST_ITEM_COUNT;
-    public static final ForgeConfigSpec.IntValue DOWNED_TIMEOUT_SECONDS;
-    public static final ForgeConfigSpec.DoubleValue REVIVE_CAST_SECONDS;
-    public static final ForgeConfigSpec.IntValue REVIVE_HEAL_PERCENT;
-    public static final ForgeConfigSpec.IntValue REVIVE_INVULN_SECONDS;
-    public static final ForgeConfigSpec.BooleanValue ALLOW_NON_SQUAD_REVIVE;
-    public static final ForgeConfigSpec.BooleanValue APPROACH_ALERT_ENABLED;
-    public static final ForgeConfigSpec.IntValue APPROACH_ALERT_RADIUS;
-    public static final ForgeConfigSpec.IntValue GIVE_UP_HOLD_TICKS;
-    public static final ForgeConfigSpec.IntValue BEACON_USES;
-    public static final ForgeConfigSpec.IntValue POS_UPDATE_INTERVAL_TICKS;
-    public static final ForgeConfigSpec.IntValue INVITE_EXPIRY_SECONDS;
-    public static final ForgeConfigSpec.BooleanValue REQUIRE_SAME_TEAM;
-    public static final ForgeConfigSpec.BooleanValue SQUAD_OPEN_JOIN_DEFAULT;
-    public static final ForgeConfigSpec.BooleanValue ALLOW_CROSS_DIMENSION_TP;
-    public static final ForgeConfigSpec.IntValue COMBAT_BLOCK_SECONDS;
-    public static final ForgeConfigSpec.BooleanValue RALLY_RESPAWN_ENABLED;
-    public static final ForgeConfigSpec.BooleanValue RESPAWN_CHOICE_ENABLED;
-    public static final ForgeConfigSpec.IntValue RESPAWN_CHOICE_WINDOW_SECONDS;
-    public static final ForgeConfigSpec.IntValue SPAWN_DANGER_RADIUS;
+    public static final ModConfigSpec.IntValue MAX_SQUAD_SIZE;
+    public static final ModConfigSpec.IntValue TP_COOLDOWN_SECONDS;
+    public static final ModConfigSpec.EnumValue<CostMode> TP_COST_MODE;
+    public static final ModConfigSpec.IntValue TP_COST_XP_LEVELS;
+    public static final ModConfigSpec.ConfigValue<String> TP_COST_ITEM;
+    public static final ModConfigSpec.IntValue TP_COST_ITEM_COUNT;
+    public static final ModConfigSpec.IntValue DOWNED_TIMEOUT_SECONDS;
+    public static final ModConfigSpec.DoubleValue REVIVE_CAST_SECONDS;
+    public static final ModConfigSpec.IntValue REVIVE_HEAL_PERCENT;
+    public static final ModConfigSpec.IntValue REVIVE_INVULN_SECONDS;
+    public static final ModConfigSpec.BooleanValue ALLOW_NON_SQUAD_REVIVE;
+    public static final ModConfigSpec.BooleanValue APPROACH_ALERT_ENABLED;
+    public static final ModConfigSpec.IntValue APPROACH_ALERT_RADIUS;
+    public static final ModConfigSpec.IntValue GIVE_UP_HOLD_TICKS;
+    public static final ModConfigSpec.IntValue BEACON_USES;
+    public static final ModConfigSpec.IntValue POS_UPDATE_INTERVAL_TICKS;
+    public static final ModConfigSpec.IntValue INVITE_EXPIRY_SECONDS;
+    public static final ModConfigSpec.BooleanValue REQUIRE_SAME_TEAM;
+    public static final ModConfigSpec.BooleanValue SQUAD_OPEN_JOIN_DEFAULT;
+    public static final ModConfigSpec.BooleanValue ALLOW_CROSS_DIMENSION_TP;
+    public static final ModConfigSpec.IntValue COMBAT_BLOCK_SECONDS;
+    public static final ModConfigSpec.BooleanValue RALLY_RESPAWN_ENABLED;
+    public static final ModConfigSpec.BooleanValue RESPAWN_CHOICE_ENABLED;
+    public static final ModConfigSpec.IntValue RESPAWN_CHOICE_WINDOW_SECONDS;
+    public static final ModConfigSpec.IntValue SPAWN_DANGER_RADIUS;
 
     static {
-        ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
+        ModConfigSpec.Builder b = new ModConfigSpec.Builder();
 
         b.push("squad");
         MAX_SQUAD_SIZE = b

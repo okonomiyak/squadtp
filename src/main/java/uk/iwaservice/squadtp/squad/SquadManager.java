@@ -1,6 +1,7 @@
 package uk.iwaservice.squadtp.squad;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -42,9 +43,11 @@ public class SquadManager extends SavedData {
     /** Transient combat tags: player UUID -> epoch millis of last damage taken. */
     private final Map<UUID, Long> lastDamaged = new HashMap<>();
 
+    private static final SavedData.Factory<SquadManager> FACTORY =
+            new SavedData.Factory<>(SquadManager::new, SquadManager::load);
+
     public static SquadManager get(MinecraftServer server) {
-        return server.overworld().getDataStorage()
-                .computeIfAbsent(SquadManager::load, SquadManager::new, DATA_NAME);
+        return server.overworld().getDataStorage().computeIfAbsent(FACTORY, DATA_NAME);
     }
 
     public SquadManager() {
@@ -392,7 +395,7 @@ public class SquadManager extends SavedData {
 
     // --- persistence ---
 
-    public static SquadManager load(CompoundTag tag) {
+    public static SquadManager load(CompoundTag tag, HolderLookup.Provider registries) {
         SquadManager manager = new SquadManager();
         ListTag squadList = tag.getList("Squads", Tag.TAG_COMPOUND);
         for (int i = 0; i < squadList.size(); i++) {
@@ -420,7 +423,7 @@ public class SquadManager extends SavedData {
     }
 
     @Override
-    public CompoundTag save(CompoundTag tag) {
+    public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
         ListTag squadList = new ListTag();
         for (Squad squad : squads.values()) {
             squadList.add(squad.save());

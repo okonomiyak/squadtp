@@ -20,7 +20,7 @@ import uk.iwaservice.squadtp.entity.RespawnBeaconEntity;
  */
 public class RespawnBeaconRenderer extends EntityRenderer<RespawnBeaconEntity> {
 
-    private static final ResourceLocation TEXTURE = new ResourceLocation("minecraft", "textures/misc/particles.png");
+    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath("minecraft", "textures/misc/particles.png");
 
     public RespawnBeaconRenderer(EntityRendererProvider.Context context) {
         super(context);

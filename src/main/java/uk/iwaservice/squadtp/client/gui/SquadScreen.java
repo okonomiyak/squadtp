@@ -274,13 +274,13 @@ public class SquadScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         if (maxScroll > 0) {
-            scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset - (int) (delta * ROW_H)));
+            scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset - (int) (scrollY * ROW_H)));
             reflow();
             return true;
         }
-        return super.mouseScrolled(mouseX, mouseY, delta);
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 
     /** Client-only preferences tab. */
@@ -566,10 +566,10 @@ public class SquadScreen extends Screen {
         if (minecraft != null && minecraft.getConnection() != null) {
             PlayerInfo info = minecraft.getConnection().getPlayerInfo(uuid);
             if (info != null) {
-                return info.getSkinLocation();
+                return info.getSkin().texture();
             }
         }
-        return DefaultPlayerSkin.getDefaultSkin(uuid);
+        return DefaultPlayerSkin.get(uuid).texture();
     }
 
     private static String shortDim(ResourceLocation dim) {
@@ -586,7 +586,7 @@ public class SquadScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics);
+        renderBackground(graphics, mouseX, mouseY, partialTick);
 
         int l = panelLeft;
         int t = panelTop;

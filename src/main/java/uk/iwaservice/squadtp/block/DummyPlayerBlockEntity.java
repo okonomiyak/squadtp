@@ -1,6 +1,7 @@
 package uk.iwaservice.squadtp.block;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -65,8 +66,8 @@ public class DummyPlayerBlockEntity extends BlockEntity {
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
         if (tag.hasUUID("DummyId")) {
             dummyId = tag.getUUID("DummyId");
             dummyName = tag.getString("DummyName");
@@ -74,8 +75,8 @@ public class DummyPlayerBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
         ensureIdentity();
         tag.putUUID("DummyId", dummyId);
         tag.putString("DummyName", dummyName);

@@ -1,8 +1,8 @@
 package uk.iwaservice.squadtp.compat.journeymap;
 
 import com.mojang.blaze3d.platform.NativeImage;
-import journeymap.client.api.IClientAPI;
-import journeymap.client.api.display.Context;
+import journeymap.api.v2.client.IClientAPI;
+import journeymap.api.v2.client.display.Context;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;

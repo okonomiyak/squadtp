@@ -1,7 +1,7 @@
 plugins {
     id 'java-library'
     id 'idea'
-    id 'net.neoforged.moddev.legacyforge' version '2.0.141'
+    id 'net.neoforged.moddev' version '2.0.143'
 }
 
 version = mod_version
@@ -11,10 +11,10 @@ base {
     archivesName = mod_id
 }
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
-legacyForge {
-    version = project.forge_version
+neoForge {
+    version = project.neo_version
 
     parchment {
         mappingsVersion = project.parchment_mappings_version
@@ -49,7 +49,12 @@ legacyForge {
 }
 
 repositories {
-    // JourneyMap API (v1.x for MC 1.20.x)
+    // JourneyMap API v2 (new recommended host; the old jm.gserv.me host is kept as a
+    // fallback below since JourneyMap still publishes there too, but is less reliable).
+    maven {
+        name = 'JourneyMapNew'
+        url = 'https://maven.blamejared.com'
+    }
     maven {
         name = 'JourneyMap'
         url = 'https://jm.gserv.me/repository/maven-public/'
@@ -60,37 +65,49 @@ repositories {
         url = 'https://cursemaven.com'
         content { includeGroup 'curse.maven' }
     }
-    // Kotlin for Forge - SuperbWarfare (Kotlin-based) needs this language provider present at runtime
+    // Kotlin for Forge (NeoForge line) - SuperbWarfare (Kotlin-based) needs this language provider present at runtime
     maven {
         name = 'KotlinForForge'
         url = 'https://thedarkcolour.github.io/KotlinForForge/'
     }
 }
 
+// JourneyMap API 2.0.x is still pre-1.0/actively iterating; re-check for updates every build
+// instead of Gradle's default 24h cache, per the API's own setup instructions.
+configurations.all {
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+
 dependencies {
     // Compile-time only soft dependency: never shipped, never required at runtime.
-    compileOnly "info.journeymap:journeymap-api:${journeymap_api_version}"
+    compileOnly group: 'info.journeymap', name: 'journeymap-api-neoforge', version: journeymap_api_version, changing: true
 
-    // JourneyMap 1.20.1-5.10.3-forge, remapped SRG->named for the dev runtime only.
-    // Production jars must NOT go into run/mods: their mixins fail against named MC classes.
-    modRuntimeOnly 'curse.maven:journeymap-32274:5789363'
+    // JourneyMap 1.21.1-6.0.2+neoforge, for the dev runtime only.
+    // Production jars must NOT go into run/mods: this is a runtime-only test copy.
+    runtimeOnly 'curse.maven:journeymap-32274:8523102'
+    // Required at runtime when JourneyMap is added as a dependency jar rather than
+    // dropped into run/mods directly (see the API's setup docs).
+    runtimeOnly 'curse.maven:common-network-806044:7087488'
 
     // TACZ (gun mod) API - compile-time only soft dependency, never shipped or required.
-    // modCompileOnly (not plain compileOnly) because TACZ ships as a single obfuscated jar
-    // and needs the same SRG->named remap CurseMaven/MDG legacy provides for JourneyMap above.
-    modCompileOnly 'curse.maven:timeless-and-classics-zero-1028108:8141310'
+    // Unofficial NeoForge 1.21.1 port (different CurseForge project than the old 1.20.1 TACZ).
+    // Unlike the old legacy-Forge TACZ jar, this NeoForge-native port ships already
+    // Mojmap-named, so a plain compileOnly/runtimeOnly (no SRG remap) is sufficient.
+    compileOnly 'curse.maven:tacz-1-21-1-1353462:8547439'
     // Full TACZ mod for in-dev runtime testing only; do NOT place this jar in run/mods directly.
-    modRuntimeOnly 'curse.maven:timeless-and-classics-zero-1028108:8141310'
+    runtimeOnly 'curse.maven:tacz-1-21-1-1353462:8547439'
 
     // SuperbWarfare (gun mod) - the revive guard has no compile-time dependency on it at all
     // (it only checks the vanilla Projectile type + the "superbwarfare" entity namespace), so
     // only a dev-runtime copy is needed here, for testing. Do NOT place this jar in run/mods directly.
-    modRuntimeOnly 'curse.maven:superb-warfare-1218165:8104849'
-    // SuperbWarfare is written in Kotlin and needs this language provider (4.x line = MC 1.20.1) to load.
-    modRuntimeOnly 'thedarkcolour:kotlinforforge:4.12.0'
+    runtimeOnly 'curse.maven:superb-warfare-1218165:8104860'
+    // SuperbWarfare is written in Kotlin and needs this language provider (NeoForge line) to load.
+    // 5.12.0 is the last kotlinforforge-neoforge release supporting MC 1.21.1 ([1.20.6,1.21.9));
+    // 6.x requires MC 1.21.9+.
+    runtimeOnly 'thedarkcolour:kotlinforforge-neoforge:5.12.0'
     // SuperbWarfare's own mandatory dependencies (dev-runtime only, for testing).
-    modRuntimeOnly 'curse.maven:geckolib-388172:8285794'
-    modRuntimeOnly 'curse.maven:curios-309927:6418456'
+    runtimeOnly 'curse.maven:geckolib-388172:8350073'
+    runtimeOnly 'curse.maven:curios-309927:6529130'
 }
 
 tasks.register('printCp') { def cp = sourceSets.main.compileClasspath; doLast { cp.each { println it } } }

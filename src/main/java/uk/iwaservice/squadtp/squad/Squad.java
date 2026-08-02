@@ -341,14 +341,14 @@ public class Squad {
         }
 
         if (tag.contains("RallyDim")) {
-            squad.rallyDimension = ResourceKey.create(Registries.DIMENSION, new ResourceLocation(tag.getString("RallyDim")));
-            squad.rallyPos = NbtUtils.readBlockPos(tag.getCompound("RallyPos"));
+            squad.rallyDimension = ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse(tag.getString("RallyDim")));
+            squad.rallyPos = NbtUtils.readBlockPos(tag, "RallyPos").orElse(null);
         }
 
         if (tag.contains("BeaconEntityId")) {
             squad.beaconEntityId = tag.getUUID("BeaconEntityId");
-            squad.beaconDimension = ResourceKey.create(Registries.DIMENSION, new ResourceLocation(tag.getString("BeaconDim")));
-            squad.beaconPos = NbtUtils.readBlockPos(tag.getCompound("BeaconPos"));
+            squad.beaconDimension = ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse(tag.getString("BeaconDim")));
+            squad.beaconPos = NbtUtils.readBlockPos(tag, "BeaconPos").orElse(null);
             squad.beaconUsesRemaining = tag.getInt("BeaconUses");
         }
         return squad;

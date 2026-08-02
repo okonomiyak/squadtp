@@ -2,11 +2,9 @@ package uk.iwaservice.squadtp.network;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
-import uk.iwaservice.squadtp.client.ClientPacketHandler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +14,18 @@ import java.util.UUID;
  * Periodic broadcast of the current positions of all online squad members.
  * Sent only to members of the same squad.
  */
-public record SquadMemberPosPacket(List<Entry> positions) {
+public record SquadMemberPosPacket(List<Entry> positions) implements CustomPacketPayload {
+
+    public static final Type<SquadMemberPosPacket> TYPE =
+            new Type<>(ResourceLocation.fromNamespaceAndPath(uk.iwaservice.squadtp.SquadTp.MODID, "squad_member_pos"));
+
+    public static final StreamCodec<FriendlyByteBuf, SquadMemberPosPacket> STREAM_CODEC =
+            StreamCodec.of((buf, msg) -> encode(msg, buf), SquadMemberPosPacket::decode);
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
 
     public record Entry(UUID uuid, String name, ResourceLocation dimension, BlockPos pos) {}
 
@@ -37,10 +46,5 @@ public record SquadMemberPosPacket(List<Entry> positions) {
             positions.add(new Entry(buf.readUUID(), buf.readUtf(), buf.readResourceLocation(), buf.readBlockPos()));
         }
         return new SquadMemberPosPacket(positions);
-    }
-
-    public static void handle(SquadMemberPosPacket msg, java.util.function.Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().setPacketHandled(true);
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ClientPacketHandler.handlePositions(msg));
     }
 }

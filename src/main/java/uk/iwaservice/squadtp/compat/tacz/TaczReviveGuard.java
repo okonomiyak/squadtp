@@ -4,8 +4,8 @@ import com.tacz.guns.api.event.common.GunFireEvent;
 import com.tacz.guns.api.event.common.GunShootEvent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.LogicalSide;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.LogicalSide;
 import uk.iwaservice.squadtp.client.ClientReviveData;
 import uk.iwaservice.squadtp.squad.ReviveSystem;
 

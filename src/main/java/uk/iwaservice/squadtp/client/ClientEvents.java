@@ -1,16 +1,16 @@
 package uk.iwaservice.squadtp.client;
 
 import net.minecraft.client.Minecraft;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
 import uk.iwaservice.squadtp.SquadTp;
 import uk.iwaservice.squadtp.client.gui.SquadScreen;
 import uk.iwaservice.squadtp.compat.JourneyMapCompat;
 
-@Mod.EventBusSubscriber(modid = SquadTp.MODID, value = Dist.CLIENT)
+@EventBusSubscriber(modid = SquadTp.MODID, value = Dist.CLIENT)
 public final class ClientEvents {
 
     @SubscribeEvent
@@ -22,10 +22,7 @@ public final class ClientEvents {
     }
 
     @SubscribeEvent
-    public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) {
-            return;
-        }
+    public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level != null && !mc.isPaused()) {
             ClientReviveData.tick();
@@ -59,7 +56,7 @@ public final class ClientEvents {
 
     /** While downed: suppress the jump input (movement keys stay usable for crawling). */
     @SubscribeEvent
-    public static void onMovementInput(net.minecraftforge.client.event.MovementInputUpdateEvent event) {
+    public static void onMovementInput(net.neoforged.neoforge.client.event.MovementInputUpdateEvent event) {
         if (ClientReviveData.getDownedRemainingTicks() >= 0) {
             event.getInput().jumping = false;
         }
@@ -67,7 +64,7 @@ public final class ClientEvents {
 
     /** While downed: block attack, item use and pick-block clicks on the client. */
     @SubscribeEvent
-    public static void onClickInput(net.minecraftforge.client.event.InputEvent.InteractionKeyMappingTriggered event) {
+    public static void onClickInput(net.neoforged.neoforge.client.event.InputEvent.InteractionKeyMappingTriggered event) {
         if (ClientReviveData.getDownedRemainingTicks() >= 0) {
             event.setCanceled(true);
             event.setSwingHand(false);
@@ -76,7 +73,7 @@ public final class ClientEvents {
 
     /** While downed: no screens except chat, pause menu and the death screen. */
     @SubscribeEvent
-    public static void onScreenOpening(net.minecraftforge.client.event.ScreenEvent.Opening event) {
+    public static void onScreenOpening(net.neoforged.neoforge.client.event.ScreenEvent.Opening event) {
         if (ClientReviveData.getDownedRemainingTicks() < 0) {
             return;
         }
@@ -92,7 +89,7 @@ public final class ClientEvents {
 
     /** Client-side jump suppression while downed (prevents rubber-banding against the server). */
     @SubscribeEvent
-    public static void onLivingJump(net.minecraftforge.event.entity.living.LivingEvent.LivingJumpEvent event) {
+    public static void onLivingJump(net.neoforged.neoforge.event.entity.living.LivingEvent.LivingJumpEvent event) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null && event.getEntity() == mc.player
                 && ClientReviveData.getDownedRemainingTicks() >= 0) {

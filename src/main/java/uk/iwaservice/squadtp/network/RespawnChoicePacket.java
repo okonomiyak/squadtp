@@ -2,11 +2,9 @@ package uk.iwaservice.squadtp.network;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
-import uk.iwaservice.squadtp.client.ClientPacketHandler;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -24,7 +22,18 @@ public record RespawnChoicePacket(@Nullable ResourceLocation rallyDim,
                                   int windowSeconds,
                                   @Nullable ResourceLocation beaconDim,
                                   @Nullable BlockPos beaconPos,
-                                  int beaconUsesRemaining) {
+                                  int beaconUsesRemaining) implements CustomPacketPayload {
+
+    public static final Type<RespawnChoicePacket> TYPE =
+            new Type<>(ResourceLocation.fromNamespaceAndPath(uk.iwaservice.squadtp.SquadTp.MODID, "respawn_choice"));
+
+    public static final StreamCodec<FriendlyByteBuf, RespawnChoicePacket> STREAM_CODEC =
+            StreamCodec.of((buf, msg) -> encode(msg, buf), RespawnChoicePacket::decode);
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
 
     public record Entry(UUID uuid, String name, ResourceLocation dimension, BlockPos pos) {}
 
@@ -80,10 +89,5 @@ public record RespawnChoicePacket(@Nullable ResourceLocation rallyDim,
             beaconUsesRemaining = buf.readVarInt();
         }
         return new RespawnChoicePacket(rallyDim, rallyPos, members, windowSeconds, beaconDim, beaconPos, beaconUsesRemaining);
-    }
-
-    public static void handle(RespawnChoicePacket msg, java.util.function.Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().setPacketHandled(true);
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ClientPacketHandler.handleRespawnChoice(msg));
     }
 }

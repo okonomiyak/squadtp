@@ -1,10 +1,10 @@
 package uk.iwaservice.squadtp.block;
 
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -27,8 +27,15 @@ import java.util.UUID;
  */
 public class DummyPlayerBlock extends BaseEntityBlock {
 
+    public static final MapCodec<DummyPlayerBlock> CODEC = simpleCodec(DummyPlayerBlock::new);
+
     public DummyPlayerBlock(Properties properties) {
         super(properties);
+    }
+
+    @Override
+    protected MapCodec<? extends BaseEntityBlock> codec() {
+        return CODEC;
     }
 
     @Nullable
@@ -43,12 +50,12 @@ public class DummyPlayerBlock extends BaseEntityBlock {
     }
 
     @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos,
-                                 Player player, InteractionHand hand, BlockHitResult hit) {
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
+                                               Player player, BlockHitResult hit) {
         if (level.isClientSide) {
             return InteractionResult.SUCCESS;
         }
-        if (hand != InteractionHand.MAIN_HAND || !(player instanceof ServerPlayer serverPlayer)) {
+        if (!(player instanceof ServerPlayer serverPlayer)) {
             return InteractionResult.PASS;
         }
         if (!(level.getBlockEntity(pos) instanceof DummyPlayerBlockEntity dummy)) {

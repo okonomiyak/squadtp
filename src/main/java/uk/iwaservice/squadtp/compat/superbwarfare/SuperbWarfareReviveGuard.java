@@ -1,11 +1,11 @@
 package uk.iwaservice.squadtp.compat.superbwarfare;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.projectile.Projectile;
-import net.minecraftforge.event.entity.EntityJoinLevelEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import uk.iwaservice.squadtp.squad.ReviveSystem;
 
 /**
@@ -31,7 +31,7 @@ public final class SuperbWarfareReviveGuard {
         if (event.getLevel().isClientSide() || !(event.getEntity() instanceof Projectile projectile)) {
             return;
         }
-        ResourceLocation typeId = ForgeRegistries.ENTITY_TYPES.getKey(projectile.getType());
+        ResourceLocation typeId = BuiltInRegistries.ENTITY_TYPE.getKey(projectile.getType());
         if (typeId == null || !NAMESPACE.equals(typeId.getNamespace())) {
             return;
         }

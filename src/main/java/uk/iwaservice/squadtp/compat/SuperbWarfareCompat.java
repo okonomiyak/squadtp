@@ -1,7 +1,7 @@
 package uk.iwaservice.squadtp.compat;
 
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.ModList;
+import net.neoforged.fml.ModList;
+import net.neoforged.neoforge.common.NeoForge;
 import uk.iwaservice.squadtp.SquadTp;
 
 /**
@@ -18,7 +18,7 @@ public final class SuperbWarfareCompat {
         if (!ModList.get().isLoaded("superbwarfare")) {
             return;
         }
-        MinecraftForge.EVENT_BUS.register(new uk.iwaservice.squadtp.compat.superbwarfare.SuperbWarfareReviveGuard());
+        NeoForge.EVENT_BUS.register(new uk.iwaservice.squadtp.compat.superbwarfare.SuperbWarfareReviveGuard());
         SquadTp.LOGGER.info("SuperbWarfare integration initialized: guns are disabled while downed");
     }
 

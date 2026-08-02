@@ -1,6 +1,7 @@
 package uk.iwaservice.squadtp.squad;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -11,7 +12,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.Heightmap;
-import net.minecraftforge.registries.ForgeRegistries;
 import uk.iwaservice.squadtp.Config;
 
 import javax.annotation.Nullable;
@@ -73,7 +73,7 @@ public final class TeleportHelper {
                 return null;
             }
             case ITEM -> {
-                Item item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(Config.TP_COST_ITEM.get()));
+                Item item = BuiltInRegistries.ITEM.getOptional(ResourceLocation.parse(Config.TP_COST_ITEM.get())).orElse(null);
                 int count = Config.TP_COST_ITEM_COUNT.get();
                 if (item == null) {
                     return null; // misconfigured item id: fail open rather than blocking teleports

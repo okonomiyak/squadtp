@@ -1,6 +1,6 @@
 package uk.iwaservice.squadtp.compat;
 
-import net.minecraftforge.fml.ModList;
+import net.neoforged.fml.ModList;
 import uk.iwaservice.squadtp.SquadTp;
 
 /**
