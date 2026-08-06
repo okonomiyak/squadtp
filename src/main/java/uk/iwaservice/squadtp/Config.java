@@ -111,7 +111,7 @@ public final class Config {
                 .define("allowNonSquadRevive", false);
         AED_COOLDOWN_SECONDS = b
                 .comment("Cooldown (seconds) before the AED item's cross-squad/no-squad revive bypass can be used again.")
-                .defineInRange("aedCooldownSeconds", 45, 0, 3600);
+                .defineInRange("aedCooldownSeconds", 5, 0, 3600);
         APPROACH_ALERT_ENABLED = b
                 .comment("While downed, show an action-bar + sound alert when a squad member's synced",
                         "position first comes within approachAlertRadius of you.")
