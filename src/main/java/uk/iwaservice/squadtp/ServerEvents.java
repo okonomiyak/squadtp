@@ -10,6 +10,9 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.server.ServerLifecycleHooks;
+import uk.iwaservice.squadtp.api.RespawnChoiceEntry;
+import uk.iwaservice.squadtp.api.RespawnChoiceProvider;
+import uk.iwaservice.squadtp.api.RespawnChoiceRegistry;
 import uk.iwaservice.squadtp.block.DummyRegistry;
 import uk.iwaservice.squadtp.command.SquadCommand;
 import uk.iwaservice.squadtp.network.NetworkHandler;
@@ -262,14 +265,12 @@ public final class ServerEvents {
         }
         SquadManager manager = SquadManager.get(player.server);
         Squad squad = manager.getSquadOf(player.getUUID());
-        if (squad == null) {
-            return;
-        }
 
         // Automatic rally respawn takes precedence over the chooser. Gated by RESPAWN_CHOICE (the
         // spawn-time switch) rather than RALLY (the anytime /squad rally switch), so admins can
         // disable "teleport on respawn" without also disabling walking up to the rally point anytime.
-        if (Config.RALLY_RESPAWN_ENABLED.get() && squad.hasRally() && manager.isEnabled(SquadFeature.RESPAWN_CHOICE)) {
+        if (squad != null && Config.RALLY_RESPAWN_ENABLED.get() && squad.hasRally()
+                && manager.isEnabled(SquadFeature.RESPAWN_CHOICE)) {
             ServerLevel targetLevel = player.server.getLevel(squad.getRallyDimension());
             if (targetLevel != null) {
                 BlockPos safe = TeleportHelper.findSafeSpot(targetLevel, squad.getRallyPos());
@@ -279,40 +280,56 @@ public final class ServerEvents {
             return;
         }
 
-        if (!Config.RESPAWN_CHOICE_ENABLED.get() || !manager.isEnabled(SquadFeature.RESPAWN_CHOICE)) {
-            return;
-        }
+        boolean choiceEnabled = Config.RESPAWN_CHOICE_ENABLED.get() && manager.isEnabled(SquadFeature.RESPAWN_CHOICE);
         List<RespawnChoicePacket.Entry> targets = new ArrayList<>();
-        for (UUID member : squad.getMembers().keySet()) {
-            if (member.equals(player.getUUID())) {
-                continue;
-            }
-            ServerPlayer online = player.server.getPlayerList().getPlayer(member);
-            if (online != null) {
-                if (ReviveSystem.isDowned(member)) {
-                    continue; // downed members are not valid spawn targets
+        boolean hasRally = false;
+        boolean hasBeacon = false;
+        if (squad != null && choiceEnabled) {
+            hasRally = squad.hasRally();
+            hasBeacon = squad.hasBeacon();
+            for (UUID member : squad.getMembers().keySet()) {
+                if (member.equals(player.getUUID())) {
+                    continue;
                 }
-                targets.add(new RespawnChoicePacket.Entry(member, online.getGameProfile().getName(),
-                        online.level().dimension().location(), online.blockPosition()));
-            } else if (manager.isDummy(member)) {
-                DummyRegistry.Entry dummy = DummyRegistry.get(member);
-                if (dummy != null) {
-                    targets.add(new RespawnChoicePacket.Entry(member, dummy.name(),
-                            dummy.dimension().location(), dummy.pos().above()));
+                ServerPlayer online = player.server.getPlayerList().getPlayer(member);
+                if (online != null) {
+                    if (ReviveSystem.isDowned(member)) {
+                        continue; // downed members are not valid spawn targets
+                    }
+                    targets.add(new RespawnChoicePacket.Entry(member, online.getGameProfile().getName(),
+                            online.level().dimension().location(), online.blockPosition()));
+                } else if (manager.isDummy(member)) {
+                    DummyRegistry.Entry dummy = DummyRegistry.get(member);
+                    if (dummy != null) {
+                        targets.add(new RespawnChoicePacket.Entry(member, dummy.name(),
+                                dummy.dimension().location(), dummy.pos().above()));
+                    }
                 }
             }
         }
-        if (!squad.hasRally() && !squad.hasBeacon() && targets.isEmpty()) {
+
+        // Third-party choices (see RespawnChoiceProvider) are independent of squadtp's own
+        // RESPAWN_CHOICE feature toggle and don't require the player to be in a squad.
+        List<RespawnChoicePacket.ExternalEntry> external = new ArrayList<>();
+        for (RespawnChoiceProvider provider : RespawnChoiceRegistry.providers()) {
+            for (RespawnChoiceEntry entry : provider.getChoices(player)) {
+                external.add(new RespawnChoicePacket.ExternalEntry(provider.id(), entry.choiceId(), entry.label(),
+                        entry.dimension(), entry.pos()));
+            }
+        }
+
+        if (!hasRally && !hasBeacon && targets.isEmpty() && external.isEmpty()) {
             return;
         }
         manager.markRespawnChoice(player.getUUID());
         NetworkHandler.sendRespawnChoice(player, new RespawnChoicePacket(
-                squad.hasRally() ? squad.getRallyDimension().location() : null,
-                squad.hasRally() ? squad.getRallyPos() : null,
+                hasRally ? squad.getRallyDimension().location() : null,
+                hasRally ? squad.getRallyPos() : null,
                 targets, Config.RESPAWN_CHOICE_WINDOW_SECONDS.get(),
-                squad.hasBeacon() ? squad.getBeaconDimension().location() : null,
-                squad.hasBeacon() ? squad.getBeaconPos() : null,
-                squad.getBeaconUsesRemaining()));
+                hasBeacon ? squad.getBeaconDimension().location() : null,
+                hasBeacon ? squad.getBeaconPos() : null,
+                hasBeacon ? squad.getBeaconUsesRemaining() : 0,
+                external));
     }
 
     private ServerEvents() {}

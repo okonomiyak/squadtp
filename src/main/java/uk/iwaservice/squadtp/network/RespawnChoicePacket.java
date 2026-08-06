@@ -24,9 +24,14 @@ public record RespawnChoicePacket(@Nullable ResourceLocation rallyDim,
                                   int windowSeconds,
                                   @Nullable ResourceLocation beaconDim,
                                   @Nullable BlockPos beaconPos,
-                                  int beaconUsesRemaining) {
+                                  int beaconUsesRemaining,
+                                  List<ExternalEntry> external) {
 
     public record Entry(UUID uuid, String name, ResourceLocation dimension, BlockPos pos) {}
+
+    /** A third-party {@link uk.iwaservice.squadtp.api.RespawnChoiceProvider}'s option. */
+    public record ExternalEntry(String providerId, String choiceId, net.minecraft.network.chat.Component label,
+                                 ResourceLocation dimension, BlockPos pos) {}
 
     public boolean hasRally() {
         return rallyDim != null && rallyPos != null;
@@ -56,6 +61,14 @@ public record RespawnChoicePacket(@Nullable ResourceLocation rallyDim,
             buf.writeBlockPos(msg.beaconPos);
             buf.writeVarInt(msg.beaconUsesRemaining);
         }
+        buf.writeVarInt(msg.external.size());
+        for (ExternalEntry e : msg.external) {
+            buf.writeUtf(e.providerId());
+            buf.writeUtf(e.choiceId());
+            buf.writeComponent(e.label());
+            buf.writeResourceLocation(e.dimension());
+            buf.writeBlockPos(e.pos());
+        }
     }
 
     public static RespawnChoicePacket decode(FriendlyByteBuf buf) {
@@ -79,7 +92,14 @@ public record RespawnChoicePacket(@Nullable ResourceLocation rallyDim,
             beaconPos = buf.readBlockPos();
             beaconUsesRemaining = buf.readVarInt();
         }
-        return new RespawnChoicePacket(rallyDim, rallyPos, members, windowSeconds, beaconDim, beaconPos, beaconUsesRemaining);
+        int externalCount = buf.readVarInt();
+        List<ExternalEntry> external = new ArrayList<>(externalCount);
+        for (int i = 0; i < externalCount; i++) {
+            external.add(new ExternalEntry(buf.readUtf(), buf.readUtf(), buf.readComponent(),
+                    buf.readResourceLocation(), buf.readBlockPos()));
+        }
+        return new RespawnChoicePacket(rallyDim, rallyPos, members, windowSeconds, beaconDim, beaconPos,
+                beaconUsesRemaining, external);
     }
 
     public static void handle(RespawnChoicePacket msg, java.util.function.Supplier<NetworkEvent.Context> ctx) {

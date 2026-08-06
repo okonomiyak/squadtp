@@ -11,6 +11,8 @@ public final class SquadColors {
 
     public static final int RALLY_COLOR = 0xFFAA00;
     public static final int BEACON_COLOR = 0xFF3355;
+    /** Third-party {@link uk.iwaservice.squadtp.api.RespawnChoiceProvider} entries. */
+    public static final int EXTERNAL_COLOR = 0x33AAFF;
 
     /** RGB color (no alpha) for the member at the given join-order slot. */
     public static int memberColor(int slot) {
