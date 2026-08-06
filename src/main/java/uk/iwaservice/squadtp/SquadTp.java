@@ -39,6 +39,7 @@ public class SquadTp {
         if (event.getTabKey() == net.minecraft.world.item.CreativeModeTabs.FUNCTIONAL_BLOCKS) {
             event.accept(ModRegistry.DUMMY_PLAYER_ITEM.get());
             event.accept(ModRegistry.RESPAWN_BEACON_ITEM.get());
+            event.accept(ModRegistry.AED_ITEM.get());
         }
     }
 }

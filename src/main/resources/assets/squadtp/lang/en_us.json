@@ -127,7 +127,8 @@
   "squadtp.msg.target_in_combat": "%s is in combat; teleport blocked for %s more seconds.",
   "squadtp.msg.downed_broadcast": "%s is down!",
   "squadtp.msg.revived": "%s revived %s!",
-  "squadtp.msg.revive_not_allowed": "Only squad members can revive",
+  "squadtp.msg.revive_not_allowed": "Only squad members can revive (or use an AED)",
+  "squadtp.msg.aed_on_cooldown": "The AED is recharging (%ss left).",
   "squadtp.msg.you_are_downed": "You cannot teleport while downed.",
   "squadtp.hud.downed": "DOWNED",
   "squadtp.hud.downed_hint": "%ss left - wait for a squadmate to revive you",
@@ -153,5 +154,6 @@
   "squadtp.gui.tooltip.beacon": "Teleport to the respawn beacon",
   "squadtp.gui.respawn_beacon": "Respawn Beacon",
   "entity.squadtp.respawn_beacon": "Respawn Beacon",
-  "item.squadtp.respawn_beacon": "Respawn Beacon"
+  "item.squadtp.respawn_beacon": "Respawn Beacon",
+  "item.squadtp.aed": "AED"
 }

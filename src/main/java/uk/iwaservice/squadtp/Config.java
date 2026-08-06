@@ -18,6 +18,7 @@ public final class Config {
     public static final ModConfigSpec.IntValue REVIVE_HEAL_PERCENT;
     public static final ModConfigSpec.IntValue REVIVE_INVULN_SECONDS;
     public static final ModConfigSpec.BooleanValue ALLOW_NON_SQUAD_REVIVE;
+    public static final ModConfigSpec.IntValue AED_COOLDOWN_SECONDS;
     public static final ModConfigSpec.BooleanValue APPROACH_ALERT_ENABLED;
     public static final ModConfigSpec.IntValue APPROACH_ALERT_RADIUS;
     public static final ModConfigSpec.IntValue GIVE_UP_HOLD_TICKS;
@@ -108,6 +109,9 @@ public final class Config {
         ALLOW_NON_SQUAD_REVIVE = b
                 .comment("If true, players outside the squad may also revive downed players.")
                 .define("allowNonSquadRevive", false);
+        AED_COOLDOWN_SECONDS = b
+                .comment("Cooldown (seconds) before the AED item's cross-squad/no-squad revive bypass can be used again.")
+                .defineInRange("aedCooldownSeconds", 45, 0, 3600);
         APPROACH_ALERT_ENABLED = b
                 .comment("While downed, show an action-bar + sound alert when a squad member's synced",
                         "position first comes within approachAlertRadius of you.")
