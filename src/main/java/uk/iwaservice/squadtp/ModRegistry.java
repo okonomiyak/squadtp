@@ -49,6 +49,10 @@ public final class ModRegistry {
     public static final RegistryObject<Item> RESPAWN_BEACON_ITEM = ITEMS.register("respawn_beacon",
             () -> new RespawnBeaconItem(new Item.Properties().stacksTo(16)));
 
+    /** Reusable revive tool; see {@link uk.iwaservice.squadtp.squad.ReviveSystem}. */
+    public static final RegistryObject<Item> AED_ITEM = ITEMS.register("aed",
+            () -> new Item(new Item.Properties().stacksTo(1)));
+
     public static void register(IEventBus modBus) {
         BLOCKS.register(modBus);
         ITEMS.register(modBus);

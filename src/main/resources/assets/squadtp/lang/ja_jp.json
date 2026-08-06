@@ -127,7 +127,8 @@
   "squadtp.msg.target_in_combat": "%s は戦闘中のため移動できません(あと %s 秒)。",
   "squadtp.msg.downed_broadcast": "%s がダウンした!",
   "squadtp.msg.revived": "%s が %s を蘇生した!",
-  "squadtp.msg.revive_not_allowed": "分隊メンバーのみ蘇生できます",
+  "squadtp.msg.revive_not_allowed": "分隊メンバーのみ蘇生できます(またはAEDを使用)",
+  "squadtp.msg.aed_on_cooldown": "AEDはクールダウン中です(残り%s秒)。",
   "squadtp.msg.you_are_downed": "ダウン中はテレポートできません。",
   "squadtp.hud.downed": "ダウン",
   "squadtp.hud.downed_hint": "残り %s 秒 — 仲間の蘇生を待とう",
@@ -153,5 +154,6 @@
   "squadtp.gui.tooltip.beacon": "リスポーンビーコンへテレポート",
   "squadtp.gui.respawn_beacon": "リスポーンビーコン",
   "entity.squadtp.respawn_beacon": "リスポーンビーコン",
-  "item.squadtp.respawn_beacon": "リスポーンビーコン"
+  "item.squadtp.respawn_beacon": "リスポーンビーコン",
+  "item.squadtp.aed": "AED"
 }

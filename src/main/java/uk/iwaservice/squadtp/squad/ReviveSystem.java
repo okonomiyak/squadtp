@@ -6,6 +6,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import uk.iwaservice.squadtp.Config;
+import uk.iwaservice.squadtp.ModRegistry;
 import uk.iwaservice.squadtp.network.NetworkHandler;
 
 import javax.annotation.Nullable;
@@ -17,11 +18,13 @@ import java.util.UUID;
 /**
  * Server-authoritative down/revive state machine.
  *
- * A lethal hit puts a squad member into a "downed" state (health pinned at 1,
+ * A lethal hit puts any player into a "downed" state (health pinned at 1,
  * heavy slowness) instead of killing them. Squad mates channel a revive by
- * holding right-click on them; letting go or stepping away cancels the cast.
- * The downed player dies for real when the timeout expires. All transitions
- * happen here on the server; clients only render state received via packets.
+ * holding right-click on them, same as always; anyone else needs the AED
+ * item in hand to do the same (see {@link #handleInteract}), which then goes
+ * on cooldown. Letting go or stepping away cancels the cast. The downed
+ * player dies for real when the timeout expires. All transitions happen here
+ * on the server; clients only render state received via packets.
  */
 public final class ReviveSystem {
 
@@ -39,11 +42,14 @@ public final class ReviveSystem {
 
     private static final class ReviveSession {
         final UUID target;
+        /** Whether this revive only became possible by holding the AED item (see {@link #handleInteract}). */
+        final boolean aedBypass;
         int progressTicks;
         int lastRefreshTick;
 
-        ReviveSession(UUID target) {
+        ReviveSession(UUID target, boolean aedBypass) {
             this.target = target;
+            this.aedBypass = aedBypass;
         }
     }
 
@@ -84,16 +90,30 @@ public final class ReviveSystem {
         if (!manager.isEnabled(SquadFeature.REVIVE) || isDowned(reviver.getUUID())) {
             return;
         }
-        if (!Config.ALLOW_NON_SQUAD_REVIVE.get()) {
-            Squad squad = manager.getSquadOf(target.getUUID());
-            if (squad == null || !squad.isMember(reviver.getUUID())) {
-                reviver.displayClientMessage(Component.translatable("squadtp.msg.revive_not_allowed"), true);
-                return;
-            }
-        }
         ReviveSession session = SESSIONS.get(reviver.getUUID());
         if (session == null || !session.target.equals(target.getUUID())) {
-            session = new ReviveSession(target.getUUID());
+            boolean allowed = Config.ALLOW_NON_SQUAD_REVIVE.get();
+            if (!allowed) {
+                Squad squad = manager.getSquadOf(target.getUUID());
+                allowed = squad != null && squad.isMember(reviver.getUUID());
+            }
+            boolean aedBypass = false;
+            if (!allowed) {
+                if (!reviver.getMainHandItem().is(ModRegistry.AED_ITEM.get())) {
+                    reviver.displayClientMessage(Component.translatable("squadtp.msg.revive_not_allowed"), true);
+                    return;
+                }
+                if (reviver.getCooldowns().isOnCooldown(ModRegistry.AED_ITEM.get())) {
+                    int remaining = (int) Math.ceil(
+                            reviver.getCooldowns().getCooldownPercent(ModRegistry.AED_ITEM.get(), 0f)
+                                    * Config.AED_COOLDOWN_SECONDS.get());
+                    reviver.displayClientMessage(
+                            Component.translatable("squadtp.msg.aed_on_cooldown", remaining), true);
+                    return;
+                }
+                aedBypass = true;
+            }
+            session = new ReviveSession(target.getUUID(), aedBypass);
             SESSIONS.put(reviver.getUUID(), session);
         }
         session.lastRefreshTick = server.getTickCount();
@@ -143,12 +163,12 @@ public final class ReviveSystem {
             NetworkHandler.sendReviveProgress(target, session.progressTicks, castTicks);
             if (session.progressTicks >= castTicks) {
                 sessions.remove();
-                complete(reviver, target);
+                complete(reviver, target, session.aedBypass);
             }
         }
     }
 
-    private static void complete(ServerPlayer reviver, ServerPlayer target) {
+    private static void complete(ServerPlayer reviver, ServerPlayer target, boolean aedBypass) {
         DOWNED.remove(target.getUUID());
         target.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
         target.removeEffect(MobEffects.GLOWING);
@@ -168,6 +188,9 @@ public final class ReviveSystem {
         if (squad == null || !squad.isMember(reviver.getUUID())) {
             reviver.sendSystemMessage(Component.translatable("squadtp.msg.revived",
                     reviver.getGameProfile().getName(), target.getGameProfile().getName()));
+        }
+        if (aedBypass) {
+            reviver.getCooldowns().addCooldown(ModRegistry.AED_ITEM.get(), Config.AED_COOLDOWN_SECONDS.get() * 20);
         }
     }
 

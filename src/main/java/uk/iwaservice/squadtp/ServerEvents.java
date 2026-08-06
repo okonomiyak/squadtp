@@ -121,7 +121,7 @@ public final class ServerEvents {
         }
     }
 
-    /** Lethal hit on a squad member -> downed state instead of death. */
+    /** Lethal hit on any player -> downed state instead of death (squad or not; see AED). */
     @SubscribeEvent
     public static void onLivingDeath(net.minecraftforge.event.entity.living.LivingDeathEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) {
@@ -136,9 +136,6 @@ public final class ServerEvents {
         SquadManager manager = SquadManager.get(player.server);
         if (!manager.isEnabled(SquadFeature.REVIVE)) {
             return;
-        }
-        if (manager.getSquadOf(player.getUUID()) == null) {
-            return; // solo players die normally
         }
         event.setCanceled(true);
         ReviveSystem.enterDowned(player);
