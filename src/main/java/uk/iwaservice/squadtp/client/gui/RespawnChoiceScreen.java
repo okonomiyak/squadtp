@@ -71,7 +71,8 @@ public class RespawnChoiceScreen extends Screen {
 
     @Override
     protected void init() {
-        int rows = (data.hasRally() ? 1 : 0) + (data.hasBeacon() ? 1 : 0) + data.members().size();
+        int rows = (data.hasRally() ? 1 : 0) + (data.hasBeacon() ? 1 : 0) + data.members().size()
+                + data.external().size();
         panelWidth = Math.min(PAD * 3 + LIST_WIDTH + MAP_SIZE, this.width - 12);
         panelHeight = Math.max(HEADER_H + 8 + 14 + rows * ROW_H + 8 + 24 + PAD,
                 HEADER_H + 8 + MAP_SIZE + 12 + 24 + PAD);
@@ -111,6 +112,14 @@ public class RespawnChoiceScreen extends Screen {
             String name = member.name();
             addRenderableWidget(Button.builder(Component.translatable("squadtp.gui.respawn_go"),
                             b -> { command("squad respawn member " + name); onClose(); })
+                    .bounds(buttonX, y, 60, 20).build());
+            y += ROW_H;
+        }
+        for (RespawnChoicePacket.ExternalEntry ext : data.external()) {
+            String providerId = ext.providerId();
+            String choiceId = ext.choiceId();
+            addRenderableWidget(Button.builder(Component.translatable("squadtp.gui.respawn_go"),
+                            b -> { command("squad respawn external " + providerId + " " + choiceId); onClose(); })
                     .bounds(buttonX, y, 60, 20).build());
             y += ROW_H;
         }
@@ -234,6 +243,12 @@ public class RespawnChoiceScreen extends Screen {
             graphics.drawString(this.font, locationInfo(member.dimension(), member.pos()), x + 24, y + 13, 0x6A7188);
             y += ROW_H;
         }
+        for (RespawnChoicePacket.ExternalEntry ext : data.external()) {
+            graphics.fill(x, y + 6, x + 8, y + 14, 0xFF000000 | SquadColors.EXTERNAL_COLOR);
+            graphics.drawString(this.font, ext.label(), x + 14, y + 2, 0xFFFFFF);
+            graphics.drawString(this.font, locationInfo(ext.dimension(), ext.pos()), x + 14, y + 13, 0x6A7188);
+            y += ROW_H;
+        }
     }
 
     private Component locationInfo(@Nullable ResourceLocation dim, @Nullable BlockPos pos) {
@@ -285,6 +300,11 @@ public class RespawnChoiceScreen extends Screen {
             int color = SquadColors.memberColor(slot++);
             if (mapDim.equals(member.dimension())) {
                 drawMarker(graphics, member.pos(), 0xFF000000 | color, 2);
+            }
+        }
+        for (RespawnChoicePacket.ExternalEntry ext : data.external()) {
+            if (mapDim.equals(ext.dimension())) {
+                drawMarker(graphics, ext.pos(), 0xFF000000 | SquadColors.EXTERNAL_COLOR, 3);
             }
         }
         drawMarker(graphics, mapCenter, 0xFFFFFFFF, 2);

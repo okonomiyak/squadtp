@@ -20,6 +20,8 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import uk.iwaservice.squadtp.Config;
+import uk.iwaservice.squadtp.api.RespawnChoiceProvider;
+import uk.iwaservice.squadtp.api.RespawnChoiceRegistry;
 import uk.iwaservice.squadtp.block.DummyRegistry;
 import uk.iwaservice.squadtp.network.NetworkHandler;
 import uk.iwaservice.squadtp.squad.Squad;
@@ -95,7 +97,11 @@ public final class SquadCommand {
                         .then(Commands.literal("beacon").executes(ctx -> respawnBeacon(ctx)))
                         .then(Commands.literal("member")
                                 .then(Commands.argument("member", StringArgumentType.word())
-                                        .suggests(SQUAD_MEMBER_NAMES).executes(ctx -> respawnMember(ctx)))))
+                                        .suggests(SQUAD_MEMBER_NAMES).executes(ctx -> respawnMember(ctx))))
+                        .then(Commands.literal("external")
+                                .then(Commands.argument("provider", StringArgumentType.word())
+                                        .then(Commands.argument("choice", StringArgumentType.word())
+                                                .executes(ctx -> respawnExternal(ctx))))))
                 .then(Commands.literal("giveup").executes(ctx -> giveUp(ctx)))
                 .then(Commands.literal("admin")
                         .requires(src -> src.hasPermission(2))
@@ -335,6 +341,33 @@ public final class SquadCommand {
         player.teleportTo(targetLevel, safe.getX() + 0.5, safe.getY(), safe.getZ() + 0.5,
                 java.util.Set.of(), player.getYRot(), player.getXRot());
         ctx.getSource().sendSuccess(() -> Component.translatable("squadtp.msg.tp_success", name), false);
+        return 1;
+    }
+
+    /**
+     * Routes a respawn pick to whichever third-party {@link RespawnChoiceProvider} owns it (see
+     * {@link uk.iwaservice.squadtp.api.RespawnChoiceRegistry}). Unlike rally/beacon/member, the
+     * provider performs its own teleport and feedback, so there's no squad-specific logic here.
+     */
+    private static int respawnExternal(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        ServerPlayer player = ctx.getSource().getPlayerOrException();
+        SquadManager manager = manager(ctx);
+        String providerId = StringArgumentType.getString(ctx, "provider");
+        String choiceId = StringArgumentType.getString(ctx, "choice");
+        if (uk.iwaservice.squadtp.squad.ReviveSystem.isDowned(player.getUUID())) {
+            return fail(ctx, "squadtp.msg.you_are_downed");
+        }
+        RespawnChoiceProvider provider = RespawnChoiceRegistry.providers().stream()
+                .filter(p -> p.id().equals(providerId)).findFirst().orElse(null);
+        if (provider == null) {
+            return fail(ctx, "squadtp.msg.respawn_expired");
+        }
+        if (!manager.consumeRespawnChoice(player.getUUID())) {
+            return fail(ctx, "squadtp.msg.respawn_expired");
+        }
+        if (!provider.onChosen(player, choiceId)) {
+            return fail(ctx, "squadtp.msg.respawn_expired");
+        }
         return 1;
     }
 
