@@ -16,7 +16,7 @@ import java.util.UUID;
  */
 public final class NetworkHandler {
 
-    private static final String PROTOCOL_VERSION = "2";
+    private static final String PROTOCOL_VERSION = "3";
 
     public static void register(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar(PROTOCOL_VERSION);
@@ -30,6 +30,8 @@ public final class NetworkHandler {
                 (msg, ctx) -> ClientPacketHandler.handleDownedState(msg));
         registrar.playToClient(ReviveProgressPacket.TYPE, ReviveProgressPacket.STREAM_CODEC,
                 (msg, ctx) -> ClientPacketHandler.handleReviveProgress(msg));
+        registrar.playToClient(SquadListPacket.TYPE, SquadListPacket.STREAM_CODEC,
+                (msg, ctx) -> ClientPacketHandler.handleSquadList(msg));
     }
 
     public static void sendDownedState(ServerPlayer player, boolean downed, int remainingTicks) {
@@ -63,6 +65,10 @@ public final class NetworkHandler {
     /** Surfaces a pending invite in a non-member's GUI. */
     public static void sendInvited(ServerPlayer player, String inviterName) {
         PacketDistributor.sendToPlayer(player, SquadSyncPacket.invited(inviterName));
+    }
+
+    public static void sendSquadList(ServerPlayer player, SquadListPacket packet) {
+        PacketDistributor.sendToPlayer(player, packet);
     }
 
     private NetworkHandler() {}

@@ -186,8 +186,11 @@ public final class SquadCommand {
     /**
      * Same-vanilla-team rule: with requireSameTeam on, a player may only join a
      * squad whose leader is on the same scoreboard team (both teamless is fine).
+     * Public so {@link uk.iwaservice.squadtp.ServerEvents#broadcastSquadList} can reuse it when
+     * building each player's "other joinable squads" list — a squad that would fail this check
+     * anyway should never even show up as a candidate.
      */
-    private static boolean sameTeam(MinecraftServer server, String nameA, String nameB) {
+    public static boolean sameTeam(MinecraftServer server, String nameA, String nameB) {
         if (!Config.REQUIRE_SAME_TEAM.get()) {
             return true;
         }

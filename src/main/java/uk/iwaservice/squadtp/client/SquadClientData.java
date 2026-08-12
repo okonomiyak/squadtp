@@ -39,8 +39,13 @@ public final class SquadClientData {
     private static BlockPos beaconPos;
     private static int beaconUsesRemaining;
     private static boolean openJoin;
+    /** Other squads we could request to join, grouped one entry per squad (see SquadListPacket). */
+    private static java.util.List<OtherSquad> joinableSquads = java.util.List.of();
     /** Incremented on every data change; lets the GUI detect updates cheaply. */
     private static int revision;
+
+    /** One other squad, for the recruit tab's "request to join" list. */
+    public record OtherSquad(String leaderName, java.util.List<String> memberNames) {}
 
     public static synchronized int getRevision() {
         return revision;
@@ -68,6 +73,11 @@ public final class SquadClientData {
         revision++;
     }
 
+    public static synchronized void applyJoinableSquads(java.util.List<OtherSquad> newJoinableSquads) {
+        joinableSquads = java.util.List.copyOf(newJoinableSquads);
+        revision++;
+    }
+
     public static synchronized void applyPositions(Map<UUID, MemberPos> newPositions) {
         positions.clear();
         for (Map.Entry<UUID, MemberPos> e : newPositions.entrySet()) {
@@ -91,6 +101,7 @@ public final class SquadClientData {
         beaconPos = null;
         beaconUsesRemaining = 0;
         openJoin = false;
+        joinableSquads = java.util.List.of();
         revision++;
     }
 
@@ -150,6 +161,10 @@ public final class SquadClientData {
 
     public static synchronized boolean isOpenJoin() {
         return openJoin;
+    }
+
+    public static synchronized java.util.List<OtherSquad> getJoinableSquads() {
+        return joinableSquads;
     }
 
     private SquadClientData() {}

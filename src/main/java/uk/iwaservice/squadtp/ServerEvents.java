@@ -17,6 +17,7 @@ import uk.iwaservice.squadtp.block.DummyRegistry;
 import uk.iwaservice.squadtp.command.SquadCommand;
 import uk.iwaservice.squadtp.network.NetworkHandler;
 import uk.iwaservice.squadtp.network.RespawnChoicePacket;
+import uk.iwaservice.squadtp.network.SquadListPacket;
 import uk.iwaservice.squadtp.network.SquadMemberPosPacket;
 import uk.iwaservice.squadtp.squad.ReviveSystem;
 import uk.iwaservice.squadtp.squad.Squad;
@@ -49,6 +50,47 @@ public final class ServerEvents {
         ReviveSystem.tick(server);
         if (++tickCounter % Config.POS_UPDATE_INTERVAL_TICKS.get() == 0) {
             broadcastPositions(server);
+            broadcastSquadList(server);
+        }
+    }
+
+    /**
+     * Sends every online player the other squads they could request to join (recruit tab), grouped
+     * one entry per squad rather than one per player. Sent to everyone, not just squadless players
+     * — a squad member can still browse and request a different squad, which switches them over on
+     * approval (see {@code SquadCommand.accept}/{@code approve}); their own squad is excluded from
+     * their own list. Same interval as position updates — this doesn't need its own config, both
+     * are "keep the recruit-adjacent GUI state fresh" ticks.
+     */
+    private static void broadcastSquadList(MinecraftServer server) {
+        SquadManager manager = SquadManager.get(server);
+        Map<UUID, Squad> squadsBySeenMember = new HashMap<>();
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            Squad squad = manager.getSquadOf(player.getUUID());
+            if (squad != null) {
+                squadsBySeenMember.putIfAbsent(squad.getId(), squad);
+            }
+        }
+        if (squadsBySeenMember.isEmpty()) {
+            return;
+        }
+        List<Squad> allSquads = new ArrayList<>(squadsBySeenMember.values());
+
+        for (ServerPlayer viewer : server.getPlayerList().getPlayers()) {
+            String viewerName = viewer.getGameProfile().getName();
+            Squad ownSquad = manager.getSquadOf(viewer.getUUID());
+            List<SquadListPacket.Entry> entries = new ArrayList<>();
+            for (Squad squad : allSquads) {
+                if (ownSquad != null && squad.getId().equals(ownSquad.getId())) {
+                    continue;
+                }
+                String leaderName = squad.getMemberName(squad.getLeader());
+                if (leaderName == null || !SquadCommand.sameTeam(server, viewerName, leaderName)) {
+                    continue;
+                }
+                entries.add(new SquadListPacket.Entry(leaderName, List.copyOf(squad.getMembers().values())));
+            }
+            NetworkHandler.sendSquadList(viewer, new SquadListPacket(entries));
         }
     }
 
