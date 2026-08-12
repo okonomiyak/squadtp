@@ -10,7 +10,10 @@ import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.scores.PlayerTeam;
+import uk.iwaservice.squadtp.Config;
 import uk.iwaservice.squadtp.client.SquadClientData;
 import uk.iwaservice.squadtp.client.SquadColors;
 
@@ -18,6 +21,7 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -334,41 +338,58 @@ public class SquadScreen extends Screen {
     }
 
     /**
-     * "Request to join" rows for every online player (except self), one
-     * "request" button each. Available whether or not the local player is
-     * already in a squad - requesting a different squad while in one switches
-     * squads on approval (the server re-validates and performs the switch).
+     * "Request to join" rows, one per other squad (see {@code SquadListPacket} — the server
+     * already excludes the viewer's own squad and anyone on a different team). Available whether
+     * or not the local player is already in a squad - requesting a different squad while in one
+     * switches squads on approval (the server re-validates and performs the switch).
      */
-    private void buildJoinRequestList(boolean excludeOwnSquad) {
-        List<PlayerInfo> candidates = new ArrayList<>();
-        for (PlayerInfo info : onlinePlayersExcept(minecraft.player.getUUID())) {
-            if (excludeOwnSquad && SquadClientData.getMembers().containsKey(info.getProfile().getId())) {
-                continue;
-            }
-            candidates.add(info);
-        }
+    private void buildJoinRequestList() {
+        List<SquadClientData.OtherSquad> squads = SquadClientData.getJoinableSquads();
         section("squadtp.gui.join_section");
-        if (candidates.isEmpty()) {
+        if (squads.isEmpty()) {
             text(PAD, cursor + 2, Component.translatable("squadtp.gui.no_players"), COLOR_TEXT_FAINT);
             cursor += 16;
         } else {
             int shown = 0;
-            for (PlayerInfo info : candidates) {
+            for (SquadClientData.OtherSquad squad : squads) {
                 if (shown++ >= MAX_LIST_ROWS) {
                     text(PAD, cursor + 4, Component.literal("…"), COLOR_TEXT_FAINT);
                     cursor += 14;
                     break;
                 }
-                UUID uuid = info.getProfile().getId();
-                String name = info.getProfile().getName();
-                face(PAD, cursor + 4, uuid);
-                text(PAD + 17, cursor + 6, Component.literal(name), COLOR_TEXT);
+                String leaderName = squad.leaderName();
+                MutableComponent names = Component.empty();
+                List<String> memberNames = squad.memberNames();
+                for (int i = 0; i < memberNames.size(); i++) {
+                    if (i > 0) {
+                        names.append(Component.literal(", ").withStyle(ChatFormatting.GRAY));
+                    }
+                    MutableComponent memberName = Component.literal(memberNames.get(i));
+                    if (memberNames.get(i).equals(leaderName)) {
+                        memberName.append(Component.literal(" ★").withStyle(ChatFormatting.GOLD));
+                    }
+                    names.append(memberName);
+                }
+                face(PAD, cursor + 4, leaderUuidFor(leaderName));
+                text(PAD + 17, cursor + 6, names, COLOR_TEXT);
                 button(panelWidth - PAD - 80, cursor, 80, Component.translatable("squadtp.gui.request_join"),
-                        Component.translatable("squadtp.gui.tooltip.request_join", name),
-                        () -> command("squad join " + name));
+                        Component.translatable("squadtp.gui.tooltip.request_join", leaderName),
+                        () -> command("squad join " + leaderName));
                 cursor += ROW_H;
             }
         }
+    }
+
+    /** Best-effort face icon lookup by name, for a joinable-squad row (falls back to a blank skin). */
+    private UUID leaderUuidFor(String name) {
+        if (minecraft != null && minecraft.getConnection() != null) {
+            for (PlayerInfo info : minecraft.getConnection().getOnlinePlayers()) {
+                if (info.getProfile().getName().equals(name)) {
+                    return info.getProfile().getId();
+                }
+            }
+        }
+        return new UUID(0L, 0L);
     }
 
     /** Members tab: the member list plus leave/disband. */
@@ -528,7 +549,7 @@ public class SquadScreen extends Screen {
             }
         }
 
-        buildJoinRequestList(inSquad);
+        buildJoinRequestList();
     }
 
     // --- data helpers ---
@@ -550,16 +571,41 @@ public class SquadScreen extends Screen {
         return Component.literal(sb.toString());
     }
 
+    /**
+     * Online players (excluding {@code excluded}) who could actually be invited or requested to
+     * join a squad with — i.e. on the same vanilla team, mirroring the server's own
+     * {@code SquadCommand.sameTeam} check (requireSameTeam, disabled = no filtering). Both the
+     * invite list and the "request to join" list feed from this, so listing someone here who'd
+     * just get rejected by the server never happens.
+     */
     private List<PlayerInfo> onlinePlayersExcept(UUID excluded) {
         List<PlayerInfo> result = new ArrayList<>();
         if (minecraft != null && minecraft.getConnection() != null) {
             for (PlayerInfo info : minecraft.getConnection().getOnlinePlayers()) {
-                if (!info.getProfile().getId().equals(excluded)) {
+                if (!info.getProfile().getId().equals(excluded) && sameTeam(info.getProfile().getId())) {
                     result.add(info);
                 }
             }
         }
         return result;
+    }
+
+    private boolean sameTeam(UUID other) {
+        if (!Config.REQUIRE_SAME_TEAM.get()) {
+            return true;
+        }
+        if (minecraft == null || minecraft.player == null || minecraft.level == null
+                || minecraft.getConnection() == null) {
+            return true;
+        }
+        PlayerInfo otherInfo = minecraft.getConnection().getPlayerInfo(other);
+        if (otherInfo == null) {
+            return true;
+        }
+        var scoreboard = minecraft.level.getScoreboard();
+        PlayerTeam mine = scoreboard.getPlayersTeam(minecraft.player.getGameProfile().getName());
+        PlayerTeam theirs = scoreboard.getPlayersTeam(otherInfo.getProfile().getName());
+        return Objects.equals(mine, theirs);
     }
 
     private ResourceLocation skinFor(UUID uuid) {

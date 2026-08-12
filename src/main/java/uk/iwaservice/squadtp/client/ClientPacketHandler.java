@@ -4,10 +4,13 @@ import net.minecraft.client.Minecraft;
 import uk.iwaservice.squadtp.client.gui.RespawnChoiceScreen;
 import uk.iwaservice.squadtp.compat.JourneyMapCompat;
 import uk.iwaservice.squadtp.network.RespawnChoicePacket;
+import uk.iwaservice.squadtp.network.SquadListPacket;
 import uk.iwaservice.squadtp.network.SquadMemberPosPacket;
 import uk.iwaservice.squadtp.network.SquadSyncPacket;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -40,6 +43,14 @@ public final class ClientPacketHandler {
 
     public static void handleReviveProgress(uk.iwaservice.squadtp.network.ReviveProgressPacket msg) {
         ClientReviveData.setReviveProgress(msg.progressTicks(), msg.totalTicks());
+    }
+
+    public static void handleSquadList(SquadListPacket msg) {
+        List<SquadClientData.OtherSquad> squads = new ArrayList<>(msg.squads().size());
+        for (SquadListPacket.Entry e : msg.squads()) {
+            squads.add(new SquadClientData.OtherSquad(e.leaderName(), e.memberNames()));
+        }
+        SquadClientData.applyJoinableSquads(squads);
     }
 
     public static void handleRespawnChoice(RespawnChoicePacket msg) {

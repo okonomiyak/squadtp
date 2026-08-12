@@ -18,7 +18,7 @@ import java.util.UUID;
  */
 public final class NetworkHandler {
 
-    private static final String PROTOCOL_VERSION = "2";
+    private static final String PROTOCOL_VERSION = "3";
 
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
             new ResourceLocation(SquadTp.MODID, "main"),
@@ -51,6 +51,11 @@ public final class NetworkHandler {
                 .encoder(ReviveProgressPacket::encode)
                 .decoder(ReviveProgressPacket::decode)
                 .consumerMainThread(ReviveProgressPacket::handle)
+                .add();
+        CHANNEL.messageBuilder(SquadListPacket.class, 5, NetworkDirection.PLAY_TO_CLIENT)
+                .encoder(SquadListPacket::encode)
+                .decoder(SquadListPacket::decode)
+                .consumerMainThread(SquadListPacket::handle)
                 .add();
     }
 
@@ -85,6 +90,10 @@ public final class NetworkHandler {
     /** Surfaces a pending invite in a non-member's GUI. */
     public static void sendInvited(ServerPlayer player, String inviterName) {
         CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), SquadSyncPacket.invited(inviterName));
+    }
+
+    public static void sendSquadList(ServerPlayer player, SquadListPacket packet) {
+        CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), packet);
     }
 
     private NetworkHandler() {}
