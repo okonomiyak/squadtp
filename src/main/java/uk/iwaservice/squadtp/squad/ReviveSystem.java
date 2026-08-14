@@ -224,6 +224,30 @@ public final class ReviveSystem {
         SESSIONS.clear();
     }
 
+    /**
+     * Resolves every currently-downed player back to normal — full recovery (same heal-percent as
+     * a successful revive), effects/pose cleared, client notified — then wipes tracking via
+     * {@link #clear()}. For callers ending a downed state mid-session (e.g. a match/round ending)
+     * rather than at server shutdown, where {@link #clear()} alone is correct since there's no
+     * player left to fix up client-side. No invulnerability grant, since no one actually revived
+     * them.
+     */
+    public static void forceReviveAll(MinecraftServer server) {
+        for (UUID uuid : new java.util.ArrayList<>(DOWNED.keySet())) {
+            ServerPlayer player = server.getPlayerList().getPlayer(uuid);
+            if (player == null) {
+                continue;
+            }
+            player.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
+            player.removeEffect(MobEffects.GLOWING);
+            player.setForcedPose(null);
+            float health = Math.max(1.0f, player.getMaxHealth() * Config.REVIVE_HEAL_PERCENT.get() / 100.0f);
+            player.setHealth(health);
+            NetworkHandler.sendDownedState(player, false, 0);
+        }
+        clear();
+    }
+
     private static void cancelSessionsFor(MinecraftServer server, UUID target) {
         SESSIONS.entrySet().removeIf(entry -> {
             if (entry.getValue().target.equals(target)) {
