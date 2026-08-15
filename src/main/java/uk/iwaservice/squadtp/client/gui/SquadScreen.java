@@ -35,7 +35,6 @@ public class SquadScreen extends Screen {
     private static final int TAB_BAR_H = 22;
     private static final int PAD = 12;
     private static final int ROW_H = 26;
-    private static final int MAX_LIST_ROWS = 5;
 
     private static final int COLOR_PANEL_BG = 0xF4222222;
     private static final int COLOR_HEADER_BG = 0xFF1F2333;
@@ -350,13 +349,7 @@ public class SquadScreen extends Screen {
             text(PAD, cursor + 2, Component.translatable("squadtp.gui.no_players"), COLOR_TEXT_FAINT);
             cursor += 16;
         } else {
-            int shown = 0;
             for (SquadClientData.OtherSquad squad : squads) {
-                if (shown++ >= MAX_LIST_ROWS) {
-                    text(PAD, cursor + 4, Component.literal("…"), COLOR_TEXT_FAINT);
-                    cursor += 14;
-                    break;
-                }
                 String leaderName = squad.leaderName();
                 MutableComponent names = Component.empty();
                 List<String> memberNames = squad.memberNames();
@@ -531,13 +524,7 @@ public class SquadScreen extends Screen {
                 text(PAD, cursor + 2, Component.translatable("squadtp.gui.no_invitable"), COLOR_TEXT_FAINT);
                 cursor += 16;
             } else {
-                int shown = 0;
                 for (PlayerInfo info : invitable) {
-                    if (shown++ >= MAX_LIST_ROWS) {
-                        text(PAD, cursor + 4, Component.literal("…"), COLOR_TEXT_FAINT);
-                        cursor += 14;
-                        break;
-                    }
                     UUID uuid = info.getProfile().getId();
                     String name = info.getProfile().getName();
                     face(PAD, cursor + 4, uuid);
