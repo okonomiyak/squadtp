@@ -10,6 +10,7 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.server.ServerLifecycleHooks;
+import uk.iwaservice.squadtp.api.PlayerDownedEvent;
 import uk.iwaservice.squadtp.api.RespawnChoiceEntry;
 import uk.iwaservice.squadtp.api.RespawnChoiceProvider;
 import uk.iwaservice.squadtp.api.RespawnChoiceRegistry;
@@ -181,6 +182,7 @@ public final class ServerEvents {
         }
         event.setCanceled(true);
         ReviveSystem.enterDowned(player);
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new PlayerDownedEvent(player, event.getSource()));
     }
 
     /** No jumping while downed (the event is not cancelable, so zero the upward motion). */
