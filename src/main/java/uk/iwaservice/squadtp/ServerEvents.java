@@ -10,6 +10,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
+import uk.iwaservice.squadtp.api.PlayerDownedEvent;
 import uk.iwaservice.squadtp.api.RespawnChoiceEntry;
 import uk.iwaservice.squadtp.api.RespawnChoiceProvider;
 import uk.iwaservice.squadtp.api.RespawnChoiceRegistry;
@@ -178,6 +179,7 @@ public final class ServerEvents {
         }
         event.setCanceled(true);
         ReviveSystem.enterDowned(player);
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new PlayerDownedEvent(player, event.getSource()));
     }
 
     /** No jumping while downed (the event is not cancelable, so zero the upward motion). */
