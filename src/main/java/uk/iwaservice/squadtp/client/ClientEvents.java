@@ -74,7 +74,16 @@ public final class ClientEvents {
         }
     }
 
-    /** While downed: no screens except chat, pause menu and the death screen. */
+    /**
+     * While downed: no screens except chat and the death screen. The pause menu used to be allowed
+     * here too, but singleplayer/LAN-hosted games pause the integrated server itself when it opens,
+     * freezing world ticking entirely — including command processing, so the give-up hold (above)
+     * can be triggered but never actually reaches {@code ReviveSystem} until unpaused, leaving the
+     * player stuck for the rest of the downed timeout with no way to give up. Blocking it outright
+     * isn't a meaningful further restriction given everything else downed already blocks (attacking,
+     * using items, jumping). Dedicated multiplayer servers are unaffected either way, since only the
+     * integrated (singleplayer/LAN) server ever actually pauses.
+     */
     @SubscribeEvent
     public static void onScreenOpening(net.minecraftforge.client.event.ScreenEvent.Opening event) {
         if (ClientReviveData.getDownedRemainingTicks() < 0) {
@@ -83,7 +92,6 @@ public final class ClientEvents {
         var screen = event.getNewScreen();
         boolean allowed = screen == null
                 || screen instanceof net.minecraft.client.gui.screens.ChatScreen
-                || screen instanceof net.minecraft.client.gui.screens.PauseScreen
                 || screen instanceof net.minecraft.client.gui.screens.DeathScreen;
         if (!allowed) {
             event.setCanceled(true);
