@@ -50,7 +50,7 @@ public final class ModRegistry {
             () -> new RespawnBeaconItem(new Item.Properties().stacksTo(16)));
 
     /** Reusable revive tool; see {@link uk.iwaservice.squadtp.squad.ReviveSystem}. */
-    public static final RegistryObject<Item> AED_ITEM = ITEMS.register("aed",
+    public static final DeferredHolder<Item, Item> AED_ITEM = ITEMS.register("aed",
             () -> new Item(new Item.Properties().stacksTo(1)));
 
     public static void register(IEventBus modBus) {

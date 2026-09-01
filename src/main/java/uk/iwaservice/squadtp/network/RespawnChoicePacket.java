@@ -74,7 +74,7 @@ public record RespawnChoicePacket(@Nullable ResourceLocation rallyDim,
         for (ExternalEntry e : msg.external) {
             buf.writeUtf(e.providerId());
             buf.writeUtf(e.choiceId());
-            buf.writeComponent(e.label());
+            buf.writeJsonWithCodec(net.minecraft.network.chat.ComponentSerialization.CODEC, e.label());
             buf.writeResourceLocation(e.dimension());
             buf.writeBlockPos(e.pos());
         }
@@ -104,7 +104,8 @@ public record RespawnChoicePacket(@Nullable ResourceLocation rallyDim,
         int externalCount = buf.readVarInt();
         List<ExternalEntry> external = new ArrayList<>(externalCount);
         for (int i = 0; i < externalCount; i++) {
-            external.add(new ExternalEntry(buf.readUtf(), buf.readUtf(), buf.readComponent(),
+            external.add(new ExternalEntry(buf.readUtf(), buf.readUtf(),
+                    buf.readJsonWithCodec(net.minecraft.network.chat.ComponentSerialization.CODEC),
                     buf.readResourceLocation(), buf.readBlockPos()));
         }
         return new RespawnChoicePacket(rallyDim, rallyPos, members, windowSeconds, beaconDim, beaconPos,
