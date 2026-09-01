@@ -18,6 +18,7 @@ import uk.iwaservice.squadtp.compat.JourneyMapCompat;
 import uk.iwaservice.squadtp.network.RespawnChoicePacket;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -64,6 +65,12 @@ public class RespawnChoiceScreen extends Screen {
     /** Serial of the latest tile request; stale callbacks are discarded. */
     private int tileSerial;
 
+    /** Row "go" actions in list order (rally, beacon, members, external); built once in init(). */
+    private final List<Runnable> rowActions = new ArrayList<>();
+    private int listTop;
+    private int scrollOffset;
+    private int maxScroll;
+
     public RespawnChoiceScreen(RespawnChoicePacket data) {
         super(Component.translatable("squadtp.gui.respawn_title"));
         this.data = data;
@@ -74,18 +81,51 @@ public class RespawnChoiceScreen extends Screen {
         int rows = (data.hasRally() ? 1 : 0) + (data.hasBeacon() ? 1 : 0) + data.members().size()
                 + data.external().size();
         panelWidth = Math.min(PAD * 3 + LIST_WIDTH + MAP_SIZE, this.width - 12);
-        panelHeight = Math.max(HEADER_H + 8 + 14 + rows * ROW_H + 8 + 24 + PAD,
-                HEADER_H + 8 + MAP_SIZE + 12 + 24 + PAD);
+        // Fixed height (matches the map column) instead of growing with the row count, so a long
+        // list scrolls within its viewport rather than overflowing the screen.
+        panelHeight = HEADER_H + 8 + MAP_SIZE + 12 + 24 + PAD;
         panelLeft = (this.width - panelWidth) / 2;
         panelTop = Math.max(12, (this.height - panelHeight) / 2 - 8);
         mapX = panelLeft + panelWidth - PAD - MAP_SIZE;
         mapY = panelTop + HEADER_H + 22;
+        listTop = panelTop + HEADER_H + 22;
+        maxScroll = Math.max(0, rows * ROW_H - MAP_SIZE);
+        scrollOffset = Math.max(0, Math.min(scrollOffset, maxScroll));
 
         if (minecraft != null && minecraft.player != null) {
             mapDim = minecraft.player.level().dimension().location();
             mapCenter = minecraft.player.blockPosition();
             requestTile();
+        }
 
+        rowActions.clear();
+        if (data.hasRally()) {
+            rowActions.add(() -> { command("squad respawn rally"); onClose(); });
+        }
+        if (data.hasBeacon()) {
+            rowActions.add(() -> { command("squad respawn beacon"); onClose(); });
+        }
+        for (RespawnChoicePacket.Entry member : data.members()) {
+            String name = member.name();
+            rowActions.add(() -> { command("squad respawn member " + name); onClose(); });
+        }
+        for (RespawnChoicePacket.ExternalEntry ext : data.external()) {
+            String providerId = ext.providerId();
+            String choiceId = ext.choiceId();
+            rowActions.add(() -> { command("squad respawn external " + providerId + " " + choiceId); onClose(); });
+        }
+
+        relayoutWidgets();
+    }
+
+    /**
+     * Re-adds every widget at the current scroll position. Row buttons scrolled out of the list
+     * viewport are simply not added, since GuiGraphics scissor (used in renderList) only clips
+     * rendering, not widget hit-testing - an added-but-clipped button would still be clickable.
+     */
+    private void relayoutWidgets() {
+        clearWidgets();
+        if (minecraft != null && minecraft.player != null) {
             addRenderableWidget(Button.builder(Component.literal("+"),
                             b -> changeRadius(-1))
                     .bounds(mapX + MAP_SIZE - 30, mapY + MAP_SIZE - 15, 14, 14).build());
@@ -94,39 +134,30 @@ public class RespawnChoiceScreen extends Screen {
                     .bounds(mapX + MAP_SIZE - 15, mapY + MAP_SIZE - 15, 14, 14).build());
         }
 
-        int y = panelTop + HEADER_H + 22;
         int buttonX = panelLeft + PAD + LIST_WIDTH - 60;
-        if (data.hasRally()) {
-            addRenderableWidget(Button.builder(Component.translatable("squadtp.gui.respawn_go"),
-                            b -> { command("squad respawn rally"); onClose(); })
-                    .bounds(buttonX, y, 60, 20).build());
+        int y = listTop - scrollOffset;
+        for (Runnable action : rowActions) {
+            if (y + ROW_H > listTop && y < listTop + MAP_SIZE) {
+                addRenderableWidget(Button.builder(Component.translatable("squadtp.gui.respawn_go"),
+                                b -> action.run())
+                        .bounds(buttonX, y, 60, 20).build());
+            }
             y += ROW_H;
         }
-        if (data.hasBeacon()) {
-            addRenderableWidget(Button.builder(Component.translatable("squadtp.gui.respawn_go"),
-                            b -> { command("squad respawn beacon"); onClose(); })
-                    .bounds(buttonX, y, 60, 20).build());
-            y += ROW_H;
-        }
-        for (RespawnChoicePacket.Entry member : data.members()) {
-            String name = member.name();
-            addRenderableWidget(Button.builder(Component.translatable("squadtp.gui.respawn_go"),
-                            b -> { command("squad respawn member " + name); onClose(); })
-                    .bounds(buttonX, y, 60, 20).build());
-            y += ROW_H;
-        }
-        for (RespawnChoicePacket.ExternalEntry ext : data.external()) {
-            String providerId = ext.providerId();
-            String choiceId = ext.choiceId();
-            addRenderableWidget(Button.builder(Component.translatable("squadtp.gui.respawn_go"),
-                            b -> { command("squad respawn external " + providerId + " " + choiceId); onClose(); })
-                    .bounds(buttonX, y, 60, 20).build());
-            y += ROW_H;
-        }
-        y += 8;
+
         addRenderableWidget(Button.builder(Component.translatable("squadtp.gui.respawn_stay"),
                         b -> onClose())
-                .bounds(panelLeft + PAD, y, LIST_WIDTH, 20).build());
+                .bounds(panelLeft + PAD, listTop + MAP_SIZE + 8, LIST_WIDTH, 20).build());
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        if (maxScroll > 0) {
+            scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset - (int) (delta * ROW_H)));
+            relayoutWidgets();
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, delta);
     }
 
     private void changeRadius(int delta) {
@@ -218,8 +249,9 @@ public class RespawnChoiceScreen extends Screen {
     }
 
     private void renderList(GuiGraphics graphics) {
-        int y = panelTop + HEADER_H + 22;
         int x = panelLeft + PAD;
+        graphics.enableScissor(x, listTop, panelLeft + PAD + LIST_WIDTH, listTop + MAP_SIZE);
+        int y = listTop - scrollOffset;
         if (data.hasRally()) {
             graphics.fill(x, y + 6, x + 8, y + 14, 0xFF000000 | SquadColors.RALLY_COLOR);
             graphics.drawString(this.font, Component.translatable("squadtp.gui.respawn_rally"), x + 14, y + 2, 0xFFFFFF);
@@ -248,6 +280,15 @@ public class RespawnChoiceScreen extends Screen {
             graphics.drawString(this.font, ext.label(), x + 14, y + 2, 0xFFFFFF);
             graphics.drawString(this.font, locationInfo(ext.dimension(), ext.pos()), x + 14, y + 13, 0x6A7188);
             y += ROW_H;
+        }
+        graphics.disableScissor();
+
+        if (maxScroll > 0) {
+            int trackX = panelLeft + PAD + LIST_WIDTH - 3;
+            graphics.fill(trackX, listTop, trackX + 2, listTop + MAP_SIZE, 0x40FFFFFF);
+            int thumbH = Math.max(12, MAP_SIZE * MAP_SIZE / (MAP_SIZE + maxScroll));
+            int thumbY = listTop + (MAP_SIZE - thumbH) * scrollOffset / maxScroll;
+            graphics.fill(trackX, thumbY, trackX + 2, thumbY + thumbH, 0xB0FFFFFF);
         }
     }
 
