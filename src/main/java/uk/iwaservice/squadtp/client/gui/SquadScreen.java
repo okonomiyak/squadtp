@@ -6,6 +6,7 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.PlayerFaceRenderer;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
+import uk.iwaservice.squadtp.client.GuiBlurFix;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.core.BlockPos;
@@ -30,6 +31,17 @@ import java.util.UUID;
  * of truth and the GUI adds no new network surface.
  */
 public class SquadScreen extends Screen {
+    private int savedBlur = -1;
+
+    @Override
+    public void removed() {
+        if (savedBlur >= 0) {
+            GuiBlurFix.restore(savedBlur);
+            savedBlur = -1;
+        }
+        super.removed();
+    }
+
 
     private static final int HEADER_H = 24;
     private static final int TAB_BAR_H = 22;
@@ -95,6 +107,7 @@ public class SquadScreen extends Screen {
 
     @Override
     protected void init() {
+        if (savedBlur < 0) savedBlur = GuiBlurFix.suppress();
         rebuild();
     }
 
@@ -619,7 +632,7 @@ public class SquadScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics, mouseX, mouseY, partialTick);
+        renderTransparentBackground(graphics);
 
         int l = panelLeft;
         int t = panelTop;

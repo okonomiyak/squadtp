@@ -7,6 +7,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.PlayerFaceRenderer;
 import net.minecraft.client.gui.screens.Screen;
+import uk.iwaservice.squadtp.client.GuiBlurFix;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.resources.DefaultPlayerSkin;
@@ -29,6 +30,8 @@ import java.util.UUID;
  * so this cannot be abused as a regular teleport.
  */
 public class RespawnChoiceScreen extends Screen {
+    private int savedBlur = -1;
+
 
     private static final int HEADER_H = 24;
     private static final int PAD = 12;
@@ -78,6 +81,7 @@ public class RespawnChoiceScreen extends Screen {
 
     @Override
     protected void init() {
+        if (savedBlur < 0) savedBlur = GuiBlurFix.suppress();
         int rows = (data.hasRally() ? 1 : 0) + (data.hasBeacon() ? 1 : 0) + data.members().size()
                 + data.external().size();
         panelWidth = Math.min(PAD * 3 + LIST_WIDTH + MAP_SIZE, this.width - 12);
@@ -213,6 +217,10 @@ public class RespawnChoiceScreen extends Screen {
     public void removed() {
         tileSerial++;
         releaseTexture();
+        if (savedBlur >= 0) {
+            GuiBlurFix.restore(savedBlur);
+            savedBlur = -1;
+        }
         super.removed();
     }
 
@@ -226,7 +234,7 @@ public class RespawnChoiceScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics, mouseX, mouseY, partialTick);
+        renderTransparentBackground(graphics);
 
         int l = panelLeft;
         int t = panelTop;
