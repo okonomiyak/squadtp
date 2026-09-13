@@ -326,7 +326,7 @@ public final class ServerEvents {
         boolean hasRally = false;
         boolean hasBeacon = false;
         if (squad != null && choiceEnabled) {
-            hasRally = squad.hasRally();
+            hasRally = squad.hasRally() && manager.isEnabled(SquadFeature.RALLY);
             hasBeacon = squad.hasBeacon();
             for (UUID member : squad.getMembers().keySet()) {
                 if (member.equals(player.getUUID())) {
