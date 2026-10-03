@@ -192,6 +192,7 @@ public final class ReviveSystem {
         if (aedBypass) {
             reviver.getCooldowns().addCooldown(ModRegistry.AED_ITEM.get(), Config.AED_COOLDOWN_SECONDS.get() * 20);
         }
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new uk.iwaservice.squadtp.api.PlayerRevivedEvent(reviver, target));
     }
 
     /** Cleanup when a player actually dies (timeout kill, give-up, /kill, void, ...). */
