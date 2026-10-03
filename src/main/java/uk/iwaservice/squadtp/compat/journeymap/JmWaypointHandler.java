@@ -12,20 +12,27 @@ import net.minecraft.world.level.Level;
 import uk.iwaservice.squadtp.SquadTp;
 import uk.iwaservice.squadtp.client.SquadClientData;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 /** Renders squad member positions and the rally point as JourneyMap waypoints. */
 public final class JmWaypointHandler {
 
+    private record Wp(String name, ResourceLocation dimension, BlockPos pos, int color) {}
+
+    /** What JourneyMap currently shows, so an unchanged sync doesn't rebuild every waypoint. */
+    private static List<Wp> shown = List.of();
+
     public static void refresh() {
         IClientAPI api = SquadJmPlugin.api();
         if (api == null) {
             return;
         }
-        api.removeAllWaypoints(SquadTp.MODID);
-
+        List<Wp> desired = new ArrayList<>();
         if (!SquadClientData.isInSquad()) {
+            update(api, desired);
             return;
         }
 
@@ -46,20 +53,32 @@ public final class JmWaypointHandler {
             if (pos == null) {
                 continue; // offline or no position received yet
             }
-            show(api, waypoint(pos.name(), pos.dimension(), pos.pos(), color));
+            desired.add(new Wp(pos.name(), pos.dimension(), pos.pos(), color));
         }
 
         ResourceLocation rallyDim = SquadClientData.getRallyDimension();
         BlockPos rallyPos = SquadClientData.getRallyPos();
         if (rallyDim != null && rallyPos != null) {
-            show(api, waypoint("Rally", rallyDim, rallyPos,
+            desired.add(new Wp("Rally", rallyDim, rallyPos,
                     uk.iwaservice.squadtp.client.SquadColors.RALLY_COLOR));
         }
 
         if (SquadClientData.hasBeacon()) {
-            show(api, waypoint("Beacon", SquadClientData.getBeaconDimension(), SquadClientData.getBeaconPos(),
+            desired.add(new Wp("Beacon", SquadClientData.getBeaconDimension(), SquadClientData.getBeaconPos(),
                     uk.iwaservice.squadtp.client.SquadColors.BEACON_COLOR));
         }
+        update(api, desired);
+    }
+
+    private static void update(IClientAPI api, List<Wp> desired) {
+        if (desired.equals(shown)) {
+            return;
+        }
+        api.removeAllWaypoints(SquadTp.MODID);
+        for (Wp w : desired) {
+            show(api, waypoint(w.name(), w.dimension(), w.pos(), w.color()));
+        }
+        shown = desired;
     }
 
     private static Waypoint waypoint(String name, ResourceLocation dimension, BlockPos pos, int color) {
