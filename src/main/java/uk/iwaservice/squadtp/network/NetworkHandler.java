@@ -57,6 +57,11 @@ public final class NetworkHandler {
                 .decoder(SquadListPacket::decode)
                 .consumerMainThread(SquadListPacket::handle)
                 .add();
+        CHANNEL.messageBuilder(RespawnChoiceResultPacket.class, 6, NetworkDirection.PLAY_TO_CLIENT)
+                .encoder(RespawnChoiceResultPacket::encode)
+                .decoder(RespawnChoiceResultPacket::decode)
+                .consumerMainThread(RespawnChoiceResultPacket::handle)
+                .add();
     }
 
     public static void sendDownedState(ServerPlayer player, boolean downed, int remainingTicks) {
@@ -94,6 +99,10 @@ public final class NetworkHandler {
 
     public static void sendSquadList(ServerPlayer player, SquadListPacket packet) {
         CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), packet);
+    }
+
+    public static void sendRespawnChoiceResult(ServerPlayer player, boolean success) {
+        CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new RespawnChoiceResultPacket(success));
     }
 
     private NetworkHandler() {}
