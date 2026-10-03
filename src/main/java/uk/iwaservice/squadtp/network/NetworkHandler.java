@@ -32,6 +32,8 @@ public final class NetworkHandler {
                 (msg, ctx) -> ClientPacketHandler.handleReviveProgress(msg));
         registrar.playToClient(SquadListPacket.TYPE, SquadListPacket.STREAM_CODEC,
                 (msg, ctx) -> ClientPacketHandler.handleSquadList(msg));
+        registrar.playToClient(RespawnChoiceResultPacket.TYPE, RespawnChoiceResultPacket.STREAM_CODEC,
+                (msg, ctx) -> ClientPacketHandler.handleRespawnChoiceResult(msg));
     }
 
     public static void sendDownedState(ServerPlayer player, boolean downed, int remainingTicks) {
@@ -69,6 +71,10 @@ public final class NetworkHandler {
 
     public static void sendSquadList(ServerPlayer player, SquadListPacket packet) {
         PacketDistributor.sendToPlayer(player, packet);
+    }
+
+    public static void sendRespawnChoiceResult(ServerPlayer player, boolean success) {
+        PacketDistributor.sendToPlayer(player, new RespawnChoiceResultPacket(success));
     }
 
     private NetworkHandler() {}

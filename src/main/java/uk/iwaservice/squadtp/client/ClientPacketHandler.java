@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import uk.iwaservice.squadtp.client.gui.RespawnChoiceScreen;
 import uk.iwaservice.squadtp.compat.JourneyMapCompat;
 import uk.iwaservice.squadtp.network.RespawnChoicePacket;
+import uk.iwaservice.squadtp.network.RespawnChoiceResultPacket;
 import uk.iwaservice.squadtp.network.SquadListPacket;
 import uk.iwaservice.squadtp.network.SquadMemberPosPacket;
 import uk.iwaservice.squadtp.network.SquadSyncPacket;
@@ -57,6 +58,13 @@ public final class ClientPacketHandler {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null && mc.screen == null) {
             mc.setScreen(new RespawnChoiceScreen(msg));
+        }
+    }
+
+    public static void handleRespawnChoiceResult(RespawnChoiceResultPacket msg) {
+        Minecraft mc = Minecraft.getInstance();
+        if (msg.success() && mc.screen instanceof RespawnChoiceScreen) {
+            mc.screen.onClose();
         }
     }
 
