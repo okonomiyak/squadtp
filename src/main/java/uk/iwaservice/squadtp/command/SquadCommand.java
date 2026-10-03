@@ -2,7 +2,6 @@ package uk.iwaservice.squadtp.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
-import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -215,35 +214,36 @@ public final class SquadCommand {
         MinecraftServer server = ctx.getSource().getServer();
         SquadManager manager = manager(ctx);
         if (featureBlocked(ctx, SquadFeature.RESPAWN_CHOICE)) {
+            NetworkHandler.sendRespawnChoiceResult(player, false);
             return 0;
         }
         if (uk.iwaservice.squadtp.squad.ReviveSystem.isDowned(player.getUUID())) {
-            return fail(ctx, "squadtp.msg.you_are_downed");
+            return respawnFail(ctx, "squadtp.msg.you_are_downed");
         }
 
         Squad squad = manager.getSquadOf(player.getUUID());
         if (squad == null) {
-            return fail(ctx, "squadtp.msg.not_in_squad");
+            return respawnFail(ctx, "squadtp.msg.not_in_squad");
         }
         if (!squad.hasRally()) {
-            return fail(ctx, "squadtp.msg.no_rally");
+            return respawnFail(ctx, "squadtp.msg.no_rally");
         }
         ServerLevel targetLevel = server.getLevel(squad.getRallyDimension());
         if (targetLevel == null) {
-            return fail(ctx, "squadtp.msg.no_rally");
+            return respawnFail(ctx, "squadtp.msg.no_rally");
         }
         if (TeleportHelper.isDestinationDangerous(targetLevel, squad.getRallyPos(), player)) {
-            return fail(ctx, "squadtp.msg.spawn_danger");
+            return respawnFail(ctx, "squadtp.msg.spawn_danger");
         }
         if (!manager.consumeRespawnChoice(player.getUUID())) {
-            return fail(ctx, "squadtp.msg.respawn_expired");
+            return respawnFail(ctx, "squadtp.msg.respawn_expired");
         }
 
         BlockPos safe = TeleportHelper.findSafeSpot(targetLevel, squad.getRallyPos());
         player.teleportTo(targetLevel, safe.getX() + 0.5, safe.getY(), safe.getZ() + 0.5,
                 java.util.Set.of(), player.getYRot(), player.getXRot());
         ctx.getSource().sendSuccess(() -> Component.translatable("squadtp.msg.rally_tp"), false);
-        return 1;
+        return respawnSuccess(player);
     }
 
     private static int respawnBeacon(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
@@ -256,25 +256,25 @@ public final class SquadCommand {
             return 0;
         }
         if (uk.iwaservice.squadtp.squad.ReviveSystem.isDowned(player.getUUID())) {
-            return fail(ctx, "squadtp.msg.you_are_downed");
+            return respawnFail(ctx, "squadtp.msg.you_are_downed");
         }
 
         Squad squad = manager.getSquadOf(player.getUUID());
         if (squad == null) {
-            return fail(ctx, "squadtp.msg.not_in_squad");
+            return respawnFail(ctx, "squadtp.msg.not_in_squad");
         }
         if (!squad.hasBeacon()) {
-            return fail(ctx, "squadtp.msg.no_beacon");
+            return respawnFail(ctx, "squadtp.msg.no_beacon");
         }
         ServerLevel targetLevel = server.getLevel(squad.getBeaconDimension());
         if (targetLevel == null) {
-            return fail(ctx, "squadtp.msg.no_beacon");
+            return respawnFail(ctx, "squadtp.msg.no_beacon");
         }
         if (TeleportHelper.isDestinationDangerous(targetLevel, squad.getBeaconPos(), player)) {
-            return fail(ctx, "squadtp.msg.spawn_danger");
+            return respawnFail(ctx, "squadtp.msg.spawn_danger");
         }
         if (!manager.consumeRespawnChoice(player.getUUID())) {
-            return fail(ctx, "squadtp.msg.respawn_expired");
+            return respawnFail(ctx, "squadtp.msg.respawn_expired");
         }
 
         BlockPos safe = TeleportHelper.findSafeSpot(targetLevel, squad.getBeaconPos());
@@ -282,7 +282,7 @@ public final class SquadCommand {
                 java.util.Set.of(), player.getYRot(), player.getXRot());
         manager.consumeBeaconUse(server, squad);
         ctx.getSource().sendSuccess(() -> Component.translatable("squadtp.msg.beacon_tp"), false);
-        return 1;
+        return respawnSuccess(player);
     }
 
     private static int respawnMember(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
@@ -291,22 +291,23 @@ public final class SquadCommand {
         SquadManager manager = manager(ctx);
         String name = StringArgumentType.getString(ctx, "member");
         if (featureBlocked(ctx, SquadFeature.RESPAWN_CHOICE)) {
+            NetworkHandler.sendRespawnChoiceResult(player, false);
             return 0;
         }
         if (uk.iwaservice.squadtp.squad.ReviveSystem.isDowned(player.getUUID())) {
-            return fail(ctx, "squadtp.msg.you_are_downed");
+            return respawnFail(ctx, "squadtp.msg.you_are_downed");
         }
 
         Squad squad = manager.getSquadOf(player.getUUID());
         if (squad == null) {
-            return fail(ctx, "squadtp.msg.not_in_squad");
+            return respawnFail(ctx, "squadtp.msg.not_in_squad");
         }
         UUID target = squad.findMemberByName(name);
         if (target == null) {
-            return fail(ctx, "squadtp.msg.target_not_member", name);
+            return respawnFail(ctx, "squadtp.msg.target_not_member", name);
         }
         if (target.equals(player.getUUID())) {
-            return fail(ctx, "squadtp.msg.cannot_self");
+            return respawnFail(ctx, "squadtp.msg.cannot_self");
         }
 
         ServerLevel targetLevel;
@@ -314,37 +315,37 @@ public final class SquadCommand {
         ServerPlayer online = server.getPlayerList().getPlayer(target);
         if (online != null) {
             if (uk.iwaservice.squadtp.squad.ReviveSystem.isDowned(target)) {
-                return fail(ctx, "squadtp.msg.target_downed", name);
+                return respawnFail(ctx, "squadtp.msg.target_downed", name);
             }
             long combat = manager.combatRemaining(target);
             if (combat > 0) {
-                return fail(ctx, "squadtp.msg.target_in_combat", name, combat);
+                return respawnFail(ctx, "squadtp.msg.target_in_combat", name, combat);
             }
             targetLevel = online.serverLevel();
             targetPos = online.blockPosition();
         } else {
             DummyRegistry.Entry dummy = manager.isDummy(target) ? DummyRegistry.get(target) : null;
             if (dummy == null) {
-                return fail(ctx, "squadtp.msg.member_offline", name);
+                return respawnFail(ctx, "squadtp.msg.member_offline", name);
             }
             targetLevel = server.getLevel(dummy.dimension());
             if (targetLevel == null) {
-                return fail(ctx, "squadtp.msg.member_offline", name);
+                return respawnFail(ctx, "squadtp.msg.member_offline", name);
             }
             targetPos = dummy.pos().above();
         }
         if (TeleportHelper.isDestinationDangerous(targetLevel, targetPos, player)) {
-            return fail(ctx, "squadtp.msg.spawn_danger");
+            return respawnFail(ctx, "squadtp.msg.spawn_danger");
         }
         if (!manager.consumeRespawnChoice(player.getUUID())) {
-            return fail(ctx, "squadtp.msg.respawn_expired");
+            return respawnFail(ctx, "squadtp.msg.respawn_expired");
         }
 
         BlockPos safe = TeleportHelper.findSafeSpot(targetLevel, targetPos);
         player.teleportTo(targetLevel, safe.getX() + 0.5, safe.getY(), safe.getZ() + 0.5,
                 java.util.Set.of(), player.getYRot(), player.getXRot());
         ctx.getSource().sendSuccess(() -> Component.translatable("squadtp.msg.tp_success", name), false);
-        return 1;
+        return respawnSuccess(player);
     }
 
     /**
@@ -358,20 +359,20 @@ public final class SquadCommand {
         String providerId = StringArgumentType.getString(ctx, "provider");
         String choiceId = StringArgumentType.getString(ctx, "choice");
         if (uk.iwaservice.squadtp.squad.ReviveSystem.isDowned(player.getUUID())) {
-            return fail(ctx, "squadtp.msg.you_are_downed");
+            return respawnFail(ctx, "squadtp.msg.you_are_downed");
         }
         RespawnChoiceProvider provider = RespawnChoiceRegistry.providers().stream()
                 .filter(p -> p.id().equals(providerId)).findFirst().orElse(null);
         if (provider == null) {
-            return fail(ctx, "squadtp.msg.respawn_expired");
+            return respawnFail(ctx, "squadtp.msg.respawn_expired");
         }
         if (!manager.consumeRespawnChoice(player.getUUID())) {
-            return fail(ctx, "squadtp.msg.respawn_expired");
+            return respawnFail(ctx, "squadtp.msg.respawn_expired");
         }
         if (!provider.onChosen(player, choiceId)) {
-            return fail(ctx, "squadtp.msg.respawn_expired");
+            return respawnFail(ctx, "squadtp.msg.respawn_expired");
         }
-        return 1;
+        return respawnSuccess(player);
     }
 
     // --- subcommands ---
@@ -912,6 +913,19 @@ public final class SquadCommand {
 
     private static SquadManager manager(CommandContext<CommandSourceStack> ctx) {
         return SquadManager.get(ctx.getSource().getServer());
+    }
+
+    private static int respawnFail(CommandContext<CommandSourceStack> ctx, String key, Object... args) {
+        ServerPlayer player = ctx.getSource().getPlayer();
+        if (player != null) {
+            NetworkHandler.sendRespawnChoiceResult(player, false);
+        }
+        return fail(ctx, key, args);
+    }
+
+    private static int respawnSuccess(ServerPlayer player) {
+        NetworkHandler.sendRespawnChoiceResult(player, true);
+        return 1;
     }
 
     private static int fail(CommandContext<CommandSourceStack> ctx, String key, Object... args) {

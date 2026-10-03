@@ -100,19 +100,19 @@ public class RespawnChoiceScreen extends Screen {
 
         rowActions.clear();
         if (data.hasRally()) {
-            rowActions.add(() -> { command("squad respawn rally"); onClose(); });
+            rowActions.add(() -> { command("squad respawn rally"); });
         }
         if (data.hasBeacon()) {
-            rowActions.add(() -> { command("squad respawn beacon"); onClose(); });
+            rowActions.add(() -> { command("squad respawn beacon"); });
         }
         for (RespawnChoicePacket.Entry member : data.members()) {
             String name = member.name();
-            rowActions.add(() -> { command("squad respawn member " + name); onClose(); });
+            rowActions.add(() -> { command("squad respawn member " + name); });
         }
         for (RespawnChoicePacket.ExternalEntry ext : data.external()) {
             String providerId = ext.providerId();
             String choiceId = ext.choiceId();
-            rowActions.add(() -> { command("squad respawn external " + providerId + " " + choiceId); onClose(); });
+            rowActions.add(() -> { command("squad respawn external " + providerId + " " + choiceId); });
         }
 
         relayoutWidgets();

@@ -8,7 +8,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraftforge.registries.ForgeRegistries;
