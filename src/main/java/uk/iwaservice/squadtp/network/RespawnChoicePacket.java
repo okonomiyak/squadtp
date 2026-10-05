@@ -31,7 +31,7 @@ public record RespawnChoicePacket(@Nullable ResourceLocation rallyDim,
 
     /** A third-party {@link uk.iwaservice.squadtp.api.RespawnChoiceProvider}'s option. */
     public record ExternalEntry(String providerId, String choiceId, net.minecraft.network.chat.Component label,
-                                 ResourceLocation dimension, BlockPos pos) {}
+                                 ResourceLocation dimension, BlockPos pos, int color, boolean pinned) {}
 
     public boolean hasRally() {
         return rallyDim != null && rallyPos != null;
@@ -68,6 +68,8 @@ public record RespawnChoicePacket(@Nullable ResourceLocation rallyDim,
             buf.writeComponent(e.label());
             buf.writeResourceLocation(e.dimension());
             buf.writeBlockPos(e.pos());
+            buf.writeInt(e.color());
+            buf.writeBoolean(e.pinned());
         }
     }
 
@@ -96,7 +98,7 @@ public record RespawnChoicePacket(@Nullable ResourceLocation rallyDim,
         List<ExternalEntry> external = new ArrayList<>(externalCount);
         for (int i = 0; i < externalCount; i++) {
             external.add(new ExternalEntry(buf.readUtf(), buf.readUtf(), buf.readComponent(),
-                    buf.readResourceLocation(), buf.readBlockPos()));
+                    buf.readResourceLocation(), buf.readBlockPos(), buf.readInt(), buf.readBoolean()));
         }
         return new RespawnChoicePacket(rallyDim, rallyPos, members, windowSeconds, beaconDim, beaconPos,
                 beaconUsesRemaining, external);

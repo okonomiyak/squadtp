@@ -18,7 +18,7 @@ import java.util.UUID;
  */
 public final class NetworkHandler {
 
-    private static final String PROTOCOL_VERSION = "3";
+    private static final String PROTOCOL_VERSION = "4";
 
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
             new ResourceLocation(SquadTp.MODID, "main"),

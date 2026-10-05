@@ -65,7 +65,7 @@ public class RespawnChoiceScreen extends Screen {
     /** Serial of the latest tile request; stale callbacks are discarded. */
     private int tileSerial;
 
-    /** Row "go" actions in list order (rally, beacon, members, external); built once in init(). */
+    /** Row "go" actions in list order (pinned external, rally, beacon, members, other external); built once in init(). */
     private final List<Runnable> rowActions = new ArrayList<>();
     private int listTop;
     private int scrollOffset;
@@ -99,6 +99,9 @@ public class RespawnChoiceScreen extends Screen {
         }
 
         rowActions.clear();
+        for (RespawnChoicePacket.ExternalEntry ext : externals(true)) {
+            addExternalAction(ext);
+        }
         if (data.hasRally()) {
             rowActions.add(() -> { command("squad respawn rally"); });
         }
@@ -109,13 +112,26 @@ public class RespawnChoiceScreen extends Screen {
             String name = member.name();
             rowActions.add(() -> { command("squad respawn member " + name); });
         }
-        for (RespawnChoicePacket.ExternalEntry ext : data.external()) {
-            String providerId = ext.providerId();
-            String choiceId = ext.choiceId();
-            rowActions.add(() -> { command("squad respawn external " + providerId + " " + choiceId); });
+        for (RespawnChoicePacket.ExternalEntry ext : externals(false)) {
+            addExternalAction(ext);
         }
 
         relayoutWidgets();
+    }
+
+    private void addExternalAction(RespawnChoicePacket.ExternalEntry ext) {
+        String providerId = ext.providerId();
+        String choiceId = ext.choiceId();
+        rowActions.add(() -> { command("squad respawn external " + providerId + " " + choiceId); });
+    }
+
+    /** External entries with the given pinned flag, in provider order. */
+    private List<RespawnChoicePacket.ExternalEntry> externals(boolean pinned) {
+        return data.external().stream().filter(e -> e.pinned() == pinned).toList();
+    }
+
+    private static int externalColor(RespawnChoicePacket.ExternalEntry ext) {
+        return ext.color() != 0 ? ext.color() : SquadColors.EXTERNAL_COLOR;
     }
 
     /**
@@ -252,6 +268,10 @@ public class RespawnChoiceScreen extends Screen {
         int x = panelLeft + PAD;
         graphics.enableScissor(x, listTop, panelLeft + PAD + LIST_WIDTH, listTop + MAP_SIZE);
         int y = listTop - scrollOffset;
+        for (RespawnChoicePacket.ExternalEntry ext : externals(true)) {
+            drawExternalRow(graphics, x, y, ext);
+            y += ROW_H;
+        }
         if (data.hasRally()) {
             graphics.fill(x, y + 6, x + 8, y + 14, 0xFF000000 | SquadColors.RALLY_COLOR);
             graphics.drawString(this.font, Component.translatable("squadtp.gui.respawn_rally"), x + 14, y + 2, 0xFFFFFF);
@@ -275,10 +295,8 @@ public class RespawnChoiceScreen extends Screen {
             graphics.drawString(this.font, locationInfo(member.dimension(), member.pos()), x + 24, y + 13, 0x6A7188);
             y += ROW_H;
         }
-        for (RespawnChoicePacket.ExternalEntry ext : data.external()) {
-            graphics.fill(x, y + 6, x + 8, y + 14, 0xFF000000 | SquadColors.EXTERNAL_COLOR);
-            graphics.drawString(this.font, ext.label(), x + 14, y + 2, 0xFFFFFF);
-            graphics.drawString(this.font, locationInfo(ext.dimension(), ext.pos()), x + 14, y + 13, 0x6A7188);
+        for (RespawnChoicePacket.ExternalEntry ext : externals(false)) {
+            drawExternalRow(graphics, x, y, ext);
             y += ROW_H;
         }
         graphics.disableScissor();
@@ -290,6 +308,12 @@ public class RespawnChoiceScreen extends Screen {
             int thumbY = listTop + (MAP_SIZE - thumbH) * scrollOffset / maxScroll;
             graphics.fill(trackX, thumbY, trackX + 2, thumbY + thumbH, 0xB0FFFFFF);
         }
+    }
+
+    private void drawExternalRow(GuiGraphics graphics, int x, int y, RespawnChoicePacket.ExternalEntry ext) {
+        graphics.fill(x, y + 6, x + 8, y + 14, 0xFF000000 | externalColor(ext));
+        graphics.drawString(this.font, ext.label(), x + 14, y + 2, 0xFFFFFF);
+        graphics.drawString(this.font, locationInfo(ext.dimension(), ext.pos()), x + 14, y + 13, 0x6A7188);
     }
 
     private Component locationInfo(@Nullable ResourceLocation dim, @Nullable BlockPos pos) {
@@ -345,7 +369,7 @@ public class RespawnChoiceScreen extends Screen {
         }
         for (RespawnChoicePacket.ExternalEntry ext : data.external()) {
             if (mapDim.equals(ext.dimension())) {
-                drawMarker(graphics, ext.pos(), 0xFF000000 | SquadColors.EXTERNAL_COLOR, 3);
+                drawMarker(graphics, ext.pos(), 0xFF000000 | externalColor(ext), 3);
             }
         }
         drawMarker(graphics, mapCenter, 0xFFFFFFFF, 2);
