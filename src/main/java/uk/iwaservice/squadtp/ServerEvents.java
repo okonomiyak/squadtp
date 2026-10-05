@@ -352,7 +352,7 @@ public final class ServerEvents {
         for (RespawnChoiceProvider provider : RespawnChoiceRegistry.providers()) {
             for (RespawnChoiceEntry entry : provider.getChoices(player)) {
                 external.add(new RespawnChoicePacket.ExternalEntry(provider.id(), entry.choiceId(), entry.label(),
-                        entry.dimension(), entry.pos()));
+                        entry.dimension(), entry.pos(), entry.color(), entry.pinned()));
             }
         }
 
