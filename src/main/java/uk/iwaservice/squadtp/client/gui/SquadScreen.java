@@ -308,7 +308,7 @@ public class SquadScreen extends Screen {
             button(panelWidth - PAD - 90, cursor, 90,
                     Component.translatable(openJoin ? "squadtp.gui.join_policy_open" : "squadtp.gui.join_policy_invite"),
                     Component.translatable("squadtp.gui.tooltip.join_policy_toggle"),
-                    () -> command("squad setjoin " + (openJoin ? "invite" : "open")));
+                    () -> command("squad joinmode " + (openJoin ? "invite" : "open")));
             cursor += ROW_H;
         }
     }
@@ -464,14 +464,14 @@ public class SquadScreen extends Screen {
                     Component.translatable("squadtp.gui.tooltip.rally"),
                     () -> { command("squad rally"); onClose(); });
             if (isLeader) {
-                button(panelWidth - PAD - 60 - 80, cursor, 76, Component.translatable("squadtp.gui.setrally"), null,
-                        () -> command("squad setrally"));
+                button(panelWidth - PAD - 60 - 80, cursor, 76, Component.translatable("squadtp.gui.rally_set"), null,
+                        () -> command("squad rally set"));
             }
         } else {
             text(PAD, cursor + 6, Component.translatable("squadtp.gui.rally_none"), COLOR_TEXT_FAINT);
             if (isLeader) {
-                button(panelWidth - PAD - 76, cursor, 76, Component.translatable("squadtp.gui.setrally"), null,
-                        () -> command("squad setrally"));
+                button(panelWidth - PAD - 76, cursor, 76, Component.translatable("squadtp.gui.rally_set"), null,
+                        () -> command("squad rally set"));
             }
         }
         cursor += ROW_H;

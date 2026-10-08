@@ -58,22 +58,70 @@ public final class SquadCommand {
         return builder.buildFuture();
     };
 
+    /** Mirrors invite(): online players outside the executor's squad (other-squad members are allowed), same team if required. */
+    private static final SuggestionProvider<CommandSourceStack> INVITE_CANDIDATES = (ctx, builder) -> {
+        ServerPlayer me = ctx.getSource().getPlayer();
+        if (me == null) {
+            return builder.buildFuture();
+        }
+        MinecraftServer server = ctx.getSource().getServer();
+        Squad mine = SquadManager.get(server).getSquadOf(me.getUUID());
+        if (mine == null) {
+            return builder.buildFuture();
+        }
+        return SharedSuggestionProvider.suggest(server.getPlayerList().getPlayers().stream()
+                .filter(p -> !mine.isMember(p.getUUID()))
+                .filter(p -> sameTeam(server, me.getGameProfile().getName(), p.getGameProfile().getName()))
+                .map(p -> p.getGameProfile().getName()), builder);
+    };
+
+    /**
+     * Mirrors requestJoin(): one online player per joinable squad (the leader when online, else the first
+     * online member) - squads other than the executor's, not full, leader on the same team if required.
+     */
+    private static final SuggestionProvider<CommandSourceStack> JOINABLE_SQUAD_PLAYERS = (ctx, builder) -> {
+        ServerPlayer me = ctx.getSource().getPlayer();
+        if (me == null) {
+            return builder.buildFuture();
+        }
+        MinecraftServer server = ctx.getSource().getServer();
+        SquadManager manager = SquadManager.get(server);
+        Squad mine = manager.getSquadOf(me.getUUID());
+        java.util.Map<UUID, String> picks = new java.util.LinkedHashMap<>();
+        for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+            Squad sq = manager.getSquadOf(p.getUUID());
+            if (sq == null || sq == mine || (mine != null && mine.getId().equals(sq.getId()))
+                    || sq.size() >= Config.MAX_SQUAD_SIZE.get()
+                    || !sameTeam(server, me.getGameProfile().getName(), sq.getMemberName(sq.getLeader()))) {
+                continue;
+            }
+            if (sq.isLeader(p.getUUID())) {
+                picks.put(sq.getId(), p.getGameProfile().getName());
+            } else {
+                picks.putIfAbsent(sq.getId(), p.getGameProfile().getName());
+            }
+        }
+        return SharedSuggestionProvider.suggest(picks.values(), builder);
+    };
+
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("squad")
                 .then(Commands.literal("create").executes(ctx -> create(ctx)))
                 .then(Commands.literal("invite")
-                        .then(Commands.argument("player", EntityArgument.player()).executes(ctx -> invite(ctx))))
+                        .then(Commands.argument("player", EntityArgument.player())
+                                .suggests(INVITE_CANDIDATES).executes(ctx -> invite(ctx))))
                 .then(Commands.literal("accept").executes(ctx -> accept(ctx)))
                 .then(Commands.literal("deny").executes(ctx -> deny(ctx)))
                 .then(Commands.literal("join")
-                        .then(Commands.argument("player", EntityArgument.player()).executes(ctx -> requestJoin(ctx))))
+                        .then(Commands.argument("player", EntityArgument.player())
+                                .suggests(JOINABLE_SQUAD_PLAYERS).executes(ctx -> requestJoin(ctx))))
                 .then(Commands.literal("approve")
                         .then(Commands.argument("player", StringArgumentType.word())
                                 .suggests(JOIN_REQUEST_NAMES).executes(ctx -> approve(ctx))))
                 .then(Commands.literal("reject")
                         .then(Commands.argument("player", StringArgumentType.word())
                                 .suggests(JOIN_REQUEST_NAMES).executes(ctx -> reject(ctx))))
-                .then(Commands.literal("setjoin")
+                .then(Commands.literal("joinmode")
                         .then(Commands.literal("open").executes(ctx -> setJoinPolicy(ctx, true)))
                         .then(Commands.literal("invite").executes(ctx -> setJoinPolicy(ctx, false))))
                 .then(Commands.literal("leave").executes(ctx -> leave(ctx)))
@@ -88,8 +136,8 @@ public final class SquadCommand {
                 .then(Commands.literal("tp")
                         .then(Commands.argument("member", StringArgumentType.word())
                                 .suggests(SQUAD_MEMBER_NAMES).executes(ctx -> teleport(ctx))))
-                .then(Commands.literal("setrally").executes(ctx -> setRally(ctx)))
-                .then(Commands.literal("rally").executes(ctx -> rally(ctx)))
+                .then(Commands.literal("rally").executes(ctx -> rally(ctx))
+                        .then(Commands.literal("set").executes(ctx -> setRally(ctx))))
                 .then(Commands.literal("beacon").executes(ctx -> beacon(ctx)))
                 .then(Commands.literal("respawn")
                         .then(Commands.literal("rally").executes(ctx -> respawnRally(ctx)))

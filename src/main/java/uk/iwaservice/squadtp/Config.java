@@ -51,7 +51,7 @@ public final class Config {
         SQUAD_OPEN_JOIN_DEFAULT = b
                 .comment("Default join policy for newly created squads. If true, /squad join admits the",
                         "applicant immediately; if false, the leader must approve each request.",
-                        "The leader can change this per-squad at any time (GUI Settings tab or /squad setjoin).")
+                        "The leader can change this per-squad at any time (GUI Settings tab or /squad joinmode).")
                 .define("squadOpenJoinDefault", true);
         b.pop();
 
