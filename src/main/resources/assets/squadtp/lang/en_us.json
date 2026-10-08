@@ -52,7 +52,7 @@
   "squadtp.gui.leave": "Leave",
   "squadtp.gui.disband": "Disband",
   "squadtp.gui.rally": "Go",
-  "squadtp.gui.setrally": "Set Here",
+  "squadtp.gui.rally_set": "Set Here",
   "squadtp.gui.rally_none": "Rally point: not set",
   "squadtp.gui.rally_at": "Rally point: %s, %s, %s (%s)",
   "squadtp.gui.invite_section": "Invitable Players",

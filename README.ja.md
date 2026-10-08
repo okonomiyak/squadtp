@@ -27,14 +27,14 @@ GNU General Public License v3.0 (GPL-3.0-only)。全文は [`LICENSE`](LICENSE) 
 | `/squad accept` / `/squad deny` | 招待に応答 | 被招待者 |
 | `/squad join <player>` | その人の分隊に参加申請 | 未所属者 |
 | `/squad approve <name>` / `/squad reject <name>` | 参加申請に応答 | リーダー |
-| `/squad setjoin open\|invite` | 分隊を自由参加(即加入)と招待制(要承認)で切り替え | リーダー |
+| `/squad joinmode open\|invite` | 分隊を自由参加(即加入)と招待制(要承認)で切り替え | リーダー |
 | `/squad leave` | 脱退(リーダー脱退時は最古参メンバーへ自動委譲) | - |
 | `/squad kick <member>` | キック(オフラインメンバーも名前指定可) | リーダー |
 | `/squad promote <member>` | リーダー委譲 | リーダー |
 | `/squad disband` | 解散 | リーダー |
 | `/squad info` | メンバー・オンライン状態・集合地点を表示 | - |
 | `/squad tp <member>` | メンバーの現在地へテレポート | - |
-| `/squad setrally` | 現在地を集合地点に設定 | リーダー |
+| `/squad rally set` | 現在地を集合地点に設定 | リーダー |
 | `/squad rally` | 集合地点へテレポート | - |
 | `/squad beacon` | リスポーンビーコンへテレポート(通常TPと同じクールダウン・コスト) | - |
 | `/squad admin` | 機能スイッチ・蘇生詠唱時間の現在値を表示 | OP (レベル2+) |
@@ -45,7 +45,7 @@ GNU General Public License v3.0 (GPL-3.0-only)。全文は [`LICENSE`](LICENSE) 
 ### 管理者用の機能スイッチ
 
 `/squad admin disable <機能>` でサーバー全体・実行時に個別機能を無効化できる(ワールドデータに永続化、再起動後も維持)。
-対象: `create`(分隊作成) / `invite`(招待) / `join`(参加申請) / `tp`(メンバーTP) / `rally`(集合地点、平常時の`/squad setrally`・`/squad rally`のみ) / `beacon`(ビーコン設置・平常時の`/squad beacon`のみ) / `respawn`(**リスポーン時のテレポート全般**: リスポーン選択画面の表示、`rallyRespawnEnabled`による自動集合地点リスポーン、`/squad respawn rally|member|beacon`) / `positions`(位置共有=マップ表示) / `dummy`(テストダミー)。
+対象: `create`(分隊作成) / `invite`(招待) / `join`(参加申請) / `tp`(メンバーTP) / `rally`(集合地点、平常時の`/squad rally set`・`/squad rally`のみ) / `beacon`(ビーコン設置・平常時の`/squad beacon`のみ) / `respawn`(**リスポーン時のテレポート全般**: リスポーン選択画面の表示、`rallyRespawnEnabled`による自動集合地点リスポーン、`/squad respawn rally|member|beacon`) / `positions`(位置共有=マップ表示) / `dummy`(テストダミー)。
 検証はすべてサーバー側の実行箇所で行うため、GUI・チャットボタン経由でも迂回できない。`positions` を無効にするとクライアントの位置表示も即クリアされる。
 
 **「リスポーン時のテレポート」と「それ以外のテレポート」は独立して切り替えられる**: 例えば `respawn` を無効化しても `/squad rally`・`/squad beacon`(平常時の移動)は使え続ける。逆に `rally`/`beacon` を無効化してもリスポーン選択画面からの集合地点・ビーコンへのリスポーンには影響しない(`tp`(メンバーTP)は元からリスポーン系とは独立)。
@@ -64,7 +64,7 @@ GNU General Public License v3.0 (GPL-3.0-only)。全文は [`LICENSE`](LICENSE) 
 
 **加入の導線は2通り**: ①リーダーが招待→相手が承認、②参加申請→リーダーが承認(自由参加の分隊なら即加入)。どちらもGUIとチャットボタンの両方から操作できる。
 
-**参加方式**: 各分隊は**自由参加**(`/squad join` で即加入、リーダーの操作不要)か**招待制**(リーダーが `/squad approve`/`reject` で個別に承認)のどちらか。新規作成した分隊は既定で自由参加になる(config の `squadOpenJoinDefault`、既定値 `true`)。リーダーはいつでも `/squad setjoin open|invite` または設定タブの切り替えボタンで変更できる。この機能追加前から存在する分隊は、リーダーが切り替えるまで招待制のまま。
+**参加方式**: 各分隊は**自由参加**(`/squad join` で即加入、リーダーの操作不要)か**招待制**(リーダーが `/squad approve`/`reject` で個別に承認)のどちらか。新規作成した分隊は既定で自由参加になる(config の `squadOpenJoinDefault`、既定値 `true`)。リーダーはいつでも `/squad joinmode open|invite` または設定タブの切り替えボタンで変更できる。この機能追加前から存在する分隊は、リーダーが切り替えるまで招待制のまま。
 
 **分隊の切り替え(乗り換え)**: 招待・参加申請とも**既に別の分隊に所属していても行える**。承諾/承認された瞬間に旧分隊を自動離脱してから新分隊に加入する(検証(満員・チーム制限など)は切り替え前にすべて通過させてから実行するため、失敗時に無所属になることはない)。旧分隊にも「〇〇が脱退しました」「新リーダーは〇〇です」を通知。GUIの「分隊に参加申請する」欄は所属中でも常時表示される(自分の分隊のメンバーは除外)。
 
@@ -162,6 +162,6 @@ TACZ連携も同様に `modRuntimeOnly 'curse.maven:timeless-and-classics-zero-1
 2. A: `/squad create` → `/squad invite B` → B: チャットの[参加する]
 3. `/squad info` で2人表示・リーダー表記を確認
 4. 互いに離れて `/squad tp <相手>` → クールダウンメッセージ(2回目)も確認
-5. A: `/squad setrally` → B: `/squad rally`
+5. A: `/squad rally set` → B: `/squad rally`
 6. JourneyMap導入時: フルスクリーンマップにメンバー(色付き)とRally(金色)のウェイポイントが約1秒間隔で追従することを確認
 7. サーバー再起動後も分隊が維持されること(SavedData)を確認

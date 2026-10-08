@@ -27,14 +27,14 @@ GNU General Public License v3.0 (GPL-3.0-only). See [`LICENSE`](LICENSE) for the
 | `/squad accept` / `/squad deny` | Respond to an invite | Invitee |
 | `/squad join <player>` | Request to join that player's squad | Not in a squad |
 | `/squad approve <name>` / `/squad reject <name>` | Respond to a join request | Leader |
-| `/squad setjoin open\|invite` | Switch the squad between free-join (auto-admit) and invite-only (needs approval) | Leader |
+| `/squad joinmode open\|invite` | Switch the squad between free-join (auto-admit) and invite-only (needs approval) | Leader |
 | `/squad leave` | Leave (leadership auto-transfers to the longest-standing member if the leader leaves) | - |
 | `/squad kick <member>` | Kick (offline members can be targeted by name) | Leader |
 | `/squad promote <member>` | Transfer leadership | Leader |
 | `/squad disband` | Disband the squad | Leader |
 | `/squad info` | Show members, online status, and the rally point | - |
 | `/squad tp <member>` | Teleport to a member's current location | - |
-| `/squad setrally` | Set the rally point to your current location | Leader |
+| `/squad rally set` | Set the rally point to your current location | Leader |
 | `/squad rally` | Teleport to the rally point | - |
 | `/squad beacon` | Teleport to the respawn beacon (same cooldown/cost as regular TP) | - |
 | `/squad admin` | Show current feature switches and the revive cast time | OP (level 2+) |
@@ -45,7 +45,7 @@ GNU General Public License v3.0 (GPL-3.0-only). See [`LICENSE`](LICENSE) for the
 ### Admin feature switches
 
 `/squad admin disable <feature>` lets you turn individual features off server-wide at runtime (persisted to world data, survives restarts).
-Available features: `create` (squad creation) / `invite` (invites) / `join` (join requests) / `tp` (member teleport) / `rally` (rally point - only the anytime `/squad setrally`/`/squad rally`) / `beacon` (beacon placement and the anytime `/squad beacon`) / `respawn` (**all respawn-time teleporting**: the respawn-chooser screen, automatic rally respawn via `rallyRespawnEnabled`, and `/squad respawn rally|member|beacon`) / `positions` (position sharing / map display) / `dummy` (test dummy block).
+Available features: `create` (squad creation) / `invite` (invites) / `join` (join requests) / `tp` (member teleport) / `rally` (rally point - only the anytime `/squad rally set`/`/squad rally`) / `beacon` (beacon placement and the anytime `/squad beacon`) / `respawn` (**all respawn-time teleporting**: the respawn-chooser screen, automatic rally respawn via `rallyRespawnEnabled`, and `/squad respawn rally|member|beacon`) / `positions` (position sharing / map display) / `dummy` (test dummy block).
 All checks happen on the server at the point of execution, so there is no way to bypass them via the GUI or chat buttons. Disabling `positions` immediately clears client-side position displays too.
 
 **Respawn-time teleporting and everyday teleporting toggle independently**: disabling `respawn` still leaves `/squad rally` and `/squad beacon` (everyday travel) working, and disabling `rally`/`beacon` has no effect on respawning at the rally point or beacon from the respawn chooser (`tp`, member teleport, was already independent from the respawn flow).
@@ -64,7 +64,7 @@ The screen is split into 3 tabs:
 
 **There are two ways to join a squad**: ① the leader invites you and you accept, ② you request to join and the leader approves (or, for a free-join squad, is admitted immediately). Both are available from the GUI and from clickable chat buttons.
 
-**Join policy**: each squad is either **free-join** (`/squad join` admits the applicant immediately, no leader action needed) or **invite-only** (the leader must `/squad approve`/`reject` each request). New squads default to free-join (`squadOpenJoinDefault` in the config, default `true`); the leader can switch at any time via `/squad setjoin open|invite` or the Settings tab's toggle button. Existing squads from before this feature keep invite-only behavior until the leader switches them.
+**Join policy**: each squad is either **free-join** (`/squad join` admits the applicant immediately, no leader action needed) or **invite-only** (the leader must `/squad approve`/`reject` each request). New squads default to free-join (`squadOpenJoinDefault` in the config, default `true`); the leader can switch at any time via `/squad joinmode open|invite` or the Settings tab's toggle button. Existing squads from before this feature keep invite-only behavior until the leader switches them.
 
 **Switching squads**: both invites and join requests work **even if you are already in a different squad**. The moment you accept/get approved, you automatically leave your old squad before joining the new one (all validation - squad-full checks, team restrictions, etc. - runs *before* the switch, so a failed join never leaves you squadless). Your old squad is notified ("X left the squad" / "X is now the leader"). The GUI's "Request to Join" section stays visible even while you're in a squad (your own squad's members are excluded from the list).
 
@@ -162,6 +162,6 @@ TACZ integration is likewise auto-installed into the dev environment via `modRun
 2. A: `/squad create` → `/squad invite B` → B: click [Join] in chat
 3. `/squad info` confirms both members and the leader marking
 4. Move apart, then `/squad tp <other player>` → also verify the cooldown message on the second attempt
-5. A: `/squad setrally` → B: `/squad rally`
+5. A: `/squad rally set` → B: `/squad rally`
 6. With JourneyMap installed: confirm member waypoints (colored) and the rally waypoint (gold) track on the fullscreen map roughly every second
 7. Confirm the squad survives a server restart (SavedData)

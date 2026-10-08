@@ -52,7 +52,7 @@
   "squadtp.gui.leave": "脱退",
   "squadtp.gui.disband": "解散",
   "squadtp.gui.rally": "移動",
-  "squadtp.gui.setrally": "ここに設定",
+  "squadtp.gui.rally_set": "ここに設定",
   "squadtp.gui.rally_none": "集合地点: 未設定",
   "squadtp.gui.rally_at": "集合地点: %s, %s, %s (%s)",
   "squadtp.gui.invite_section": "招待できるプレイヤー",
