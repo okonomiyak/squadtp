@@ -2,7 +2,6 @@ package uk.iwaservice.squadtp.client.gui;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.PlayerFaceRenderer;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
@@ -48,15 +47,10 @@ public class SquadScreen extends Screen {
     private static final int PAD = 12;
     private static final int ROW_H = 26;
 
-    private static final int COLOR_PANEL_BG = 0xF4222222;
-    private static final int COLOR_HEADER_BG = 0xFF1F2333;
-    private static final int COLOR_TAB_BAR_BG = 0xFF191C29;
-    private static final int COLOR_ACCENT = 0xFF4A5A8A;
-    private static final int COLOR_OUTLINE = 0xFF454A66;
-    private static final int COLOR_TEXT = 0xFFFFFF;
-    private static final int COLOR_TEXT_DIM = 0xA0A8C0;
-    private static final int COLOR_TEXT_FAINT = 0x6A7188;
-    private static final int COLOR_SEPARATOR = 0x28FFFFFF;
+    private static final int COLOR_TEXT = FlatButton.COLOR_TEXT;
+    private static final int COLOR_TEXT_DIM = FlatButton.COLOR_TEXT_DIM;
+    private static final int COLOR_TEXT_FAINT = 0xFF70767E;
+    private static final int COLOR_SEPARATOR = FlatButton.COLOR_CARD_LINE;
     private static final int COLOR_ONLINE = 0xFF55FF55;
     private static final int COLOR_OFFLINE = 0xFF666B80;
 
@@ -83,7 +77,7 @@ public class SquadScreen extends Screen {
     private final List<Placement> pending = new ArrayList<>();
     private final List<Tab> tabs = new ArrayList<>();
     /** Rendered manually, outside the content scissor - see render()/addTabBarWidgets(). */
-    private final List<Button> tabButtons = new ArrayList<>();
+    private final List<FlatButton> tabButtons = new ArrayList<>();
 
     private int panelWidth = 360;
     private int panelLeft;
@@ -179,8 +173,7 @@ public class SquadScreen extends Screen {
             if (!isVisible(y, 20)) {
                 return;
             }
-            Button b = Button.builder(label, btn -> action.run())
-                    .bounds(panelLeft + relX, y, w, 20).build();
+            FlatButton b = new FlatButton(label, btn -> action.run(), panelLeft + relX, y, w, 20);
             if (tooltip != null) {
                 b.setTooltip(Tooltip.create(tooltip));
             }
@@ -280,9 +273,8 @@ public class SquadScreen extends Screen {
         int x = panelLeft;
         for (Tab tab : tabs) {
             Tab captured = tab;
-            Button b = Button.builder(Component.translatable(tab.key), btn -> selectTab(captured))
-                    .bounds(x, barY, tabWidth, TAB_BAR_H - 1).build();
-            b.active = tab != selectedTab;
+            FlatButton b = FlatButton.tab(Component.translatable(tab.key), btn -> selectTab(captured),
+                    x, barY, tabWidth, TAB_BAR_H - 1, () -> captured == selectedTab);
             addWidget(b);
             tabButtons.add(b);
             x += tabWidth;
@@ -631,27 +623,26 @@ public class SquadScreen extends Screen {
     // --- rendering ---
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderTransparentBackground(graphics);
+    public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        // keep the world visible: no vanilla dim / blur
+    }
 
+    @Override
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         int l = panelLeft;
         int t = panelTop;
         int r = l + panelWidth;
         int b = t + panelHeight;
-        graphics.fill(l - 1, t - 1, r + 1, b + 1, 0x90000000);
-        graphics.fill(l, t, r, b, COLOR_PANEL_BG);
-        graphics.fill(l, t, r, t + HEADER_H, COLOR_HEADER_BG);
-        graphics.fill(l, t + HEADER_H, r, t + HEADER_H + TAB_BAR_H + 1, COLOR_TAB_BAR_BG);
-        graphics.fill(l, t + HEADER_H + TAB_BAR_H + 1, r, t + HEADER_H + TAB_BAR_H + 2, COLOR_ACCENT);
-        graphics.renderOutline(l - 1, t - 1, panelWidth + 2, panelHeight + 2, COLOR_OUTLINE);
+        FlatButton.drawPanel(graphics, l, t, panelWidth, panelHeight);
+        graphics.fill(l, t + HEADER_H + TAB_BAR_H + 1, r, t + HEADER_H + TAB_BAR_H + 2, FlatButton.COLOR_CARD_LINE);
 
-        graphics.drawString(this.font, this.title, l + PAD, t + 8, COLOR_TEXT);
+        graphics.drawString(this.font, this.title, l + PAD, t + 8, COLOR_TEXT_DIM);
         int rightWidth = this.font.width(headerRight);
         graphics.drawString(this.font, headerRight, r - PAD - rightWidth, t + 8, COLOR_TEXT_DIM);
 
         // Tab buttons sit above viewportTop (fixed chrome), so they must render before
         // the scissor below is enabled - otherwise the scissor clips them away entirely.
-        for (Button tabButton : tabButtons) {
+        for (FlatButton tabButton : tabButtons) {
             tabButton.render(graphics, mouseX, mouseY, partialTick);
         }
 
@@ -676,7 +667,7 @@ public class SquadScreen extends Screen {
             int trackX = r - 5;
             int trackTop = viewportTop + 1;
             int trackHeight = Math.max(1, viewportBottom - viewportTop - 2);
-            graphics.fill(trackX, trackTop, trackX + 2, trackTop + trackHeight, 0x40FFFFFF);
+            graphics.fill(trackX, trackTop, trackX + 2, trackTop + trackHeight, FlatButton.COLOR_CARD_LINE);
             int thumbHeight = Math.max(12, trackHeight * panelHeight / contentHeight);
             int thumbY = trackTop + (trackHeight - thumbHeight) * scrollOffset / Math.max(1, maxScroll);
             graphics.fill(trackX, thumbY, trackX + 2, thumbY + thumbHeight, 0xB0FFFFFF);
