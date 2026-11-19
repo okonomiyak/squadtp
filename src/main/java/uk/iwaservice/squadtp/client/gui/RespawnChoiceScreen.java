@@ -4,7 +4,6 @@ import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.PlayerFaceRenderer;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.PlayerInfo;
@@ -142,28 +141,20 @@ public class RespawnChoiceScreen extends Screen {
     private void relayoutWidgets() {
         clearWidgets();
         if (minecraft != null && minecraft.player != null) {
-            addRenderableWidget(Button.builder(Component.literal("+"),
-                            b -> changeRadius(-1))
-                    .bounds(mapX + MAP_SIZE - 30, mapY + MAP_SIZE - 15, 14, 14).build());
-            addRenderableWidget(Button.builder(Component.literal("-"),
-                            b -> changeRadius(1))
-                    .bounds(mapX + MAP_SIZE - 15, mapY + MAP_SIZE - 15, 14, 14).build());
+            addRenderableWidget(new FlatButton(Component.literal("+"), b -> changeRadius(-1), mapX + MAP_SIZE - 30, mapY + MAP_SIZE - 15, 14, 14));
+            addRenderableWidget(new FlatButton(Component.literal("-"), b -> changeRadius(1), mapX + MAP_SIZE - 15, mapY + MAP_SIZE - 15, 14, 14));
         }
 
         int buttonX = panelLeft + PAD + LIST_WIDTH - 60;
         int y = listTop - scrollOffset;
         for (Runnable action : rowActions) {
             if (y + ROW_H > listTop && y < listTop + MAP_SIZE) {
-                addRenderableWidget(Button.builder(Component.translatable("squadtp.gui.respawn_go"),
-                                b -> action.run())
-                        .bounds(buttonX, y, 60, 20).build());
+                addRenderableWidget(new FlatButton(Component.translatable("squadtp.gui.respawn_go"), b -> action.run(), buttonX, y, 60, 20));
             }
             y += ROW_H;
         }
 
-        addRenderableWidget(Button.builder(Component.translatable("squadtp.gui.respawn_stay"),
-                        b -> onClose())
-                .bounds(panelLeft + PAD, listTop + MAP_SIZE + 8, LIST_WIDTH, 20).build());
+        addRenderableWidget(new FlatButton(Component.translatable("squadtp.gui.respawn_stay"), b -> onClose(), panelLeft + PAD, listTop + MAP_SIZE + 8, LIST_WIDTH, 20));
     }
 
     @Override
@@ -242,21 +233,16 @@ public class RespawnChoiceScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics);
-
         int l = panelLeft;
         int t = panelTop;
         int r = l + panelWidth;
         int b = t + panelHeight;
-        graphics.fill(l - 1, t - 1, r + 1, b + 1, 0x90000000);
-        graphics.fill(l, t, r, b, 0xF4141420);
-        graphics.fill(l, t, r, t + HEADER_H, 0xFF1F2333);
-        graphics.fill(l, t + HEADER_H, r, t + HEADER_H + 1, 0xFF4A5A8A);
-        graphics.renderOutline(l - 1, t - 1, panelWidth + 2, panelHeight + 2, 0xFF454A66);
+        FlatButton.drawPanel(graphics, l, t, panelWidth, panelHeight);
+        graphics.fill(l, t + HEADER_H, r, t + HEADER_H + 1, FlatButton.COLOR_CARD_LINE);
 
-        graphics.drawString(this.font, this.title, l + PAD, t + 8, 0xFFFFFF);
+        graphics.drawString(this.font, this.title, l + PAD, t + 8, FlatButton.COLOR_TEXT_DIM);
         graphics.drawString(this.font, Component.translatable("squadtp.gui.respawn_hint", data.windowSeconds())
-                .withStyle(ChatFormatting.GRAY), l + PAD, t + HEADER_H + 7, 0x6A7188);
+                .withStyle(ChatFormatting.GRAY), l + PAD, t + HEADER_H + 7, FlatButton.COLOR_TEXT_DIM);
 
         renderList(graphics);
         renderMap(graphics);
@@ -274,16 +260,16 @@ public class RespawnChoiceScreen extends Screen {
         }
         if (data.hasRally()) {
             graphics.fill(x, y + 6, x + 8, y + 14, 0xFF000000 | SquadColors.RALLY_COLOR);
-            graphics.drawString(this.font, Component.translatable("squadtp.gui.respawn_rally"), x + 14, y + 2, 0xFFFFFF);
-            graphics.drawString(this.font, locationInfo(data.rallyDim(), data.rallyPos()), x + 14, y + 13, 0x6A7188);
+            graphics.drawString(this.font, Component.translatable("squadtp.gui.respawn_rally"), x + 14, y + 2, FlatButton.COLOR_TEXT);
+            graphics.drawString(this.font, locationInfo(data.rallyDim(), data.rallyPos()), x + 14, y + 13, FlatButton.COLOR_TEXT_DIM);
             y += ROW_H;
         }
         if (data.hasBeacon()) {
             graphics.fill(x, y + 6, x + 8, y + 14, 0xFF000000 | SquadColors.BEACON_COLOR);
-            graphics.drawString(this.font, Component.translatable("squadtp.gui.respawn_beacon"), x + 14, y + 2, 0xFFFFFF);
+            graphics.drawString(this.font, Component.translatable("squadtp.gui.respawn_beacon"), x + 14, y + 2, FlatButton.COLOR_TEXT);
             Component beaconInfo = locationInfo(data.beaconDim(), data.beaconPos())
                     .copy().append(" (" + data.beaconUsesRemaining() + ")");
-            graphics.drawString(this.font, beaconInfo, x + 14, y + 13, 0x6A7188);
+            graphics.drawString(this.font, beaconInfo, x + 14, y + 13, FlatButton.COLOR_TEXT_DIM);
             y += ROW_H;
         }
         int slot = 0;
@@ -291,8 +277,8 @@ public class RespawnChoiceScreen extends Screen {
             int color = SquadColors.memberColor(slot++);
             graphics.fill(x, y + 1, x + 3, y + ROW_H - 3, 0xFF000000 | color);
             PlayerFaceRenderer.draw(graphics, skinFor(member.uuid()), x + 7, y + 5, 12);
-            graphics.drawString(this.font, member.name(), x + 24, y + 2, 0xFFFFFF);
-            graphics.drawString(this.font, locationInfo(member.dimension(), member.pos()), x + 24, y + 13, 0x6A7188);
+            graphics.drawString(this.font, member.name(), x + 24, y + 2, FlatButton.COLOR_TEXT);
+            graphics.drawString(this.font, locationInfo(member.dimension(), member.pos()), x + 24, y + 13, FlatButton.COLOR_TEXT_DIM);
             y += ROW_H;
         }
         for (RespawnChoicePacket.ExternalEntry ext : externals(false)) {
@@ -312,8 +298,8 @@ public class RespawnChoiceScreen extends Screen {
 
     private void drawExternalRow(GuiGraphics graphics, int x, int y, RespawnChoicePacket.ExternalEntry ext) {
         graphics.fill(x, y + 6, x + 8, y + 14, 0xFF000000 | externalColor(ext));
-        graphics.drawString(this.font, ext.label(), x + 14, y + 2, 0xFFFFFF);
-        graphics.drawString(this.font, locationInfo(ext.dimension(), ext.pos()), x + 14, y + 13, 0x6A7188);
+        graphics.drawString(this.font, ext.label(), x + 14, y + 2, FlatButton.COLOR_TEXT);
+        graphics.drawString(this.font, locationInfo(ext.dimension(), ext.pos()), x + 14, y + 13, FlatButton.COLOR_TEXT_DIM);
     }
 
     private Component locationInfo(@Nullable ResourceLocation dim, @Nullable BlockPos pos) {
@@ -333,7 +319,7 @@ public class RespawnChoiceScreen extends Screen {
     private void renderMap(GuiGraphics graphics) {
         int x = mapX;
         int y = mapY;
-        graphics.renderOutline(x - 1, y - 1, MAP_SIZE + 2, MAP_SIZE + 2, 0xFF454A66);
+        graphics.renderOutline(x - 1, y - 1, MAP_SIZE + 2, MAP_SIZE + 2, FlatButton.COLOR_CARD_LINE);
 
         if (mapTextureId != null && mapTexture != null && mapTexture.getPixels() != null) {
             int texW = mapTexture.getPixels().getWidth();
@@ -348,7 +334,7 @@ public class RespawnChoiceScreen extends Screen {
 
         // Current range indicator, e.g. "±64".
         graphics.fill(x + 2, y + 2, x + 34, y + 13, 0x90000000);
-        graphics.drawString(this.font, "±" + MAP_RADII[radiusIndex], x + 5, y + 4, 0xC0C8DC);
+        graphics.drawString(this.font, "±" + MAP_RADII[radiusIndex], x + 5, y + 4, FlatButton.COLOR_TEXT);
 
         if (mapDim == null || mapCenter == null) {
             return;
